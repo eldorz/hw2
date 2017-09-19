@@ -16,9 +16,7 @@ def generate_batch(data, batch_size, skip_window):
     Batch is a vector of shape (batch_size, 2*skip_window), with each entry for the batch containing all the context words, with the corresponding label being the word in the middle of the context
     """
     global data_index
-    assert batch_size % num_skips == 0
-    assert num_skips <= 2 * skip_window
-    batch = np.ndarray(shape=(batch_size), dtype=np.int32)
+    batch = np.ndarray(shape=(batch_size, 2 * skip_window), dtype=np.int32)
     labels = np.ndarray(shape=(batch_size, 1), dtype=np.int32)
     span = 2 * skip_window + 1  # [ skip_window target skip_window ]
     buffer = collections.deque(maxlen=span)
@@ -26,17 +24,13 @@ def generate_batch(data, batch_size, skip_window):
         data_index = 0
     buffer.extend(data[data_index:data_index + span])
     data_index += span
-    for i in range(batch_size // num_skips):
+    for i in range(batch_size):
         target = skip_window  # target label at the center of the buffer
-        targets_to_avoid = [skip_window]
-        for j in range(num_skips):
-            # randomly sample a word in the context window, avoiding the target
-            # word, and words already added (both stored in targets_to_avoid)
-            while target in targets_to_avoid:
-                target = random.randint(0, span - 1)
-            targets_to_avoid.append(target)
-            batch[i * num_skips + j] = buffer[skip_window]
-            labels[i * num_skips + j, 0] = buffer[target]
+        labels[i] = buffer[target]
+        for j in range(skip_window):
+            batch[i][j] = buffer[j]
+        for j in range(skip_window + 1, span):
+            batch[i][j - 1] = buffer[j]
         if data_index == len(data):
             # reached the end of the data, start again
             buffer.extend(data[:span])
@@ -61,5 +55,6 @@ def get_mean_context_embeds(embeddings, train_inputs):
     # cpu is recommended to avoid out of memory errors, if you don't
     # have a high capacity GPU
     with tf.device('/cpu:0'):
-        pass
+        batch_embeds = tf.gather(embeddings, train_inputs)
+        mean_context_embeds = tf.reduce_mean(batch_embeds, 1)
     return mean_context_embeds
