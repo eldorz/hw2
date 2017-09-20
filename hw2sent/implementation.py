@@ -6,6 +6,8 @@ import tarfile
 
 
 batch_size = 50
+GLOVE_DIM = 50
+GLOVE_MAX_VOCAB = 10000  # 400000 words in glove datasete
 
 def load_data(glove_dict):
     """
@@ -27,10 +29,28 @@ def load_glove_embeddings():
             word_index_dict: a dictionary matching a word in string form to
             its index in the embeddings array. e.g. {"apple": 119"}
     """
-    #data = open("glove.6B.50d.txt",'r',encoding="utf-8")
+
     #if you are running on the CSE machines, you can load the glove data from here
     #data = open("/home/cs9444/public_html/17s2/hw2/glove.6B.50d.txt",'r',encoding="utf-8")
-    return embeddings
+    
+    with open("glove.6B.50d.txt",'r',encoding="utf-8") as f:
+        data = f.readlines()
+
+    #TODO only the most common words
+    #TODO no stopwords
+
+    embeddings = np.empty([GLOVE_MAX_VOCAB,GLOVE_DIM], dtype=np.float32)
+    n = 0
+    word_index_dict = {}
+    for d in data:
+        if n >= GLOVE_MAX_VOCAB:
+            break
+        elements = d.split()
+        word_index_dict[elements[0]] = n
+        embeddings[n] = elements[1:]
+        n += 1
+
+    return embeddings, word_index_dict
 
 
 def define_graph(glove_embeddings_arr):

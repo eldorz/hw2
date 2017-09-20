@@ -34,10 +34,15 @@ def plot_with_labels(low_dim_embs, labels, filename='tsne_embeddings.png'):
 if __name__ == "__main__":
     # Step 6: Visualize the embeddings.
     reverse_dictionary = np.load("Idx2Word.npy").item()
+    print("reverse dictionary loaded")
     embeddings = np.load("CBOW_Embeddings.npy")
+    print("embeddings loaded")
+    print("performing tsne")
     tsne = TSNE(perplexity=30, n_components=2, init='pca', n_iter=5000, method='exact')
     plot_only = 500
     low_dim_embs = tsne.fit_transform(embeddings[:plot_only, :])
+    print("tsne finished")
     labels = [reverse_dictionary[i] for i in range(plot_only)]
     plot_with_labels(low_dim_embs, labels)
+    print("showing plot")
     plt.show();
