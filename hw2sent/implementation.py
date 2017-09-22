@@ -4,6 +4,7 @@ import glob #this will be useful when reading reviews from file
 import os
 import tarfile
 import re
+import string
 
 batch_size = 50
 GLOVE_DIM = 50
@@ -12,11 +13,33 @@ NUM_REVIEWS = 25000
 WORDS_PER_REVIEW = 40
 
 def preprocess(rawstring):
+    # stopwords
+    stops = {'i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you',
+        'your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his',
+        'himself', 'she', 'her', 'hers', 'herself', 'it', 'its', 'itself',
+        'they', 'them', 'their', 'theirs', 'themselves', 'what', 'which', 'who',
+        'whom', 'this', 'that', 'these', 'those', 'am', 'is', 'are', 'was',
+        'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having', 'do',
+        'does', 'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if', 'or',
+        'because', 'as', 'until', 'while', 'of', 'at', 'by', 'for', 'with',
+        'about', 'against', 'between', 'into', 'through', 'during', 'before',
+        'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in', 'out',
+        'on', 'off', 'over', 'under', 'again', 'further', 'then', 'once',
+        'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any', 'both',
+        'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor',
+        'only', 'own', 'same', 'so', 'than', 'too', 'can', 'will'}
+
     nobr = re.sub(r'<br>', ' ', rawstring)
     no_punct = ''.join(c for c in nobr if c not in string.punctuation)
-    words = no_punct.split()
-    print(words)
-    return words
+    lower = no_punct.lower()
+    words = lower.split()
+    processed = []
+    for w in words:
+        if w in stops: continue
+        processed.append(w)
+
+    print(processed)
+    return processed
 
 
 def load_data(glove_dict):
@@ -40,18 +63,22 @@ def load_data(glove_dict):
     # untar
     if not os.path.exists(os.path.join(dir, 'reviews/')):
         with tarfile.open(filename, "r") as tarball:
+            print("untarring")
             tarball.extractall(os.path.join(dir, 'reviews/'))
 
     # load and preprocess
+    print("loading")
     file_list = glob.glob(os.path.join(dir, 'reviews/pos/*'))
     file_list.extend(glob.glob(os.path.join(dir, 'reviews/neg/*')))
-    assert(len(file_list) == num_reviews)
-    data = np.empty([num_reviews, words_per_review, GLOVE_DIM], 
+    assert(len(file_list) == NUM_REVIEWS)
+    data = np.empty([NUM_REVIEWS, WORDS_PER_REVIEW, GLOVE_DIM], 
         dtype=np.float32)
     for f in file_list:
+        print("processing", f)
         with open(f, "r", encoding='utf8') as openf:
             s = openf.read()
             words = preprocess(s)
+            break
     return data
 
 
