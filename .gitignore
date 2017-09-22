@@ -103,3 +103,4 @@ ENV/
 # LD ignores
 *.txt
 *.npy
+hw2sent/reviews.tar.gz

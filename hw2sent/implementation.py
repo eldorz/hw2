@@ -3,11 +3,21 @@ import numpy as np
 import glob #this will be useful when reading reviews from file
 import os
 import tarfile
-
+import re
 
 batch_size = 50
 GLOVE_DIM = 50
 GLOVE_MAX_VOCAB = 10000  # 400000 words in glove datasete
+NUM_REVIEWS = 25000
+WORDS_PER_REVIEW = 40
+
+def preprocess(rawstring):
+    nobr = re.sub(r'<br>', ' ', rawstring)
+    no_punct = ''.join(c for c in nobr if c not in string.punctuation)
+    words = no_punct.split()
+    print(words)
+    return words
+
 
 def load_data(glove_dict):
     """
@@ -17,6 +27,31 @@ def load_data(glove_dict):
     reviews should be the negative reviews.
     RETURN: numpy array of data with each row being a review in vectorized
     form"""
+
+    filename = 'reviews.tar.gz'
+    dir = os.path.dirname(__file__)
+
+    # just load data if already there
+    if os.path.exists(os.path.join(dir, 'data.npy')):
+        print("using saved data, delete 'data.npy' to reprocess")
+        data = np.load('data.npy')
+        return data
+
+    # untar
+    if not os.path.exists(os.path.join(dir, 'reviews/')):
+        with tarfile.open(filename, "r") as tarball:
+            tarball.extractall(os.path.join(dir, 'reviews/'))
+
+    # load and preprocess
+    file_list = glob.glob(os.path.join(dir, 'reviews/pos/*'))
+    file_list.extend(glob.glob(os.path.join(dir, 'reviews/neg/*')))
+    assert(len(file_list) == num_reviews)
+    data = np.empty([num_reviews, words_per_review, GLOVE_DIM], 
+        dtype=np.float32)
+    for f in file_list:
+        with open(f, "r", encoding='utf8') as openf:
+            s = openf.read()
+            words = preprocess(s)
     return data
 
 
@@ -36,12 +71,13 @@ def load_glove_embeddings():
     with open("glove.6B.50d.txt",'r',encoding="utf-8") as f:
         data = f.readlines()
 
-    #TODO only the most common words
-    #TODO no stopwords
-
     embeddings = np.empty([GLOVE_MAX_VOCAB,GLOVE_DIM], dtype=np.float32)
-    n = 0
     word_index_dict = {}
+
+    word_index_dict['UNK'] = 0
+    embeddings[0] = np.zeros(GLOVE_DIM)
+
+    n = 1
     for d in data:
         if n >= GLOVE_MAX_VOCAB:
             break
