@@ -35,10 +35,9 @@ def preprocess(rawstring):
     words = lower.split()
     processed = []
     for w in words:
-        if w in stops: continue
+        if w not in stops: continue
         processed.append(w)
 
-    print(processed)
     return processed
 
 
@@ -63,22 +62,40 @@ def load_data(glove_dict):
     # untar
     if not os.path.exists(os.path.join(dir, 'reviews/')):
         with tarfile.open(filename, "r") as tarball:
-            print("untarring")
             tarball.extractall(os.path.join(dir, 'reviews/'))
 
     # load and preprocess
-    print("loading")
     file_list = glob.glob(os.path.join(dir, 'reviews/pos/*'))
     file_list.extend(glob.glob(os.path.join(dir, 'reviews/neg/*')))
     assert(len(file_list) == NUM_REVIEWS)
-    data = np.empty([NUM_REVIEWS, WORDS_PER_REVIEW, GLOVE_DIM], 
-        dtype=np.float32)
+    data = np.empty([NUM_REVIEWS, WORDS_PER_REVIEW], dtype=np.intp)
+    filenum = 0
     for f in file_list:
-        print("processing", f)
         with open(f, "r", encoding='utf8') as openf:
             s = openf.read()
             words = preprocess(s)
-            break
+            word_indices = []
+            wordnum = 0
+            for w in words:
+                if wordnum >= WORDS_PER_REVIEW: break
+                if w in glove_dict:
+                    # add index of known word
+                    word_indices.append(glove_dict[w]) 
+                else:
+                    # add the index of the unknown word
+                    word_indices.append(glove_dict['UNK'])
+                wordnum += 1
+
+            # zero padding
+            if wordnum < WORDS_PER_REVIEW:
+                for i in range(wordnum, WORDS_PER_REVIEW):
+                    word_indices.append(0)
+
+            data[filenum] = word_indices
+        filenum += 1
+        
+    np.save("data", data)
+
     return data
 
 
