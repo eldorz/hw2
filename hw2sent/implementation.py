@@ -147,4 +147,12 @@ def define_graph(glove_embeddings_arr):
     RETURN: input placeholder, labels placeholder, optimizer, accuracy and loss
     tensors"""
 
+    input_data = tf.placeholder(tf.int32,
+        shape = (batch_size, WORDS_PER_REVIEW), name = "input_data")
+    labels = tf.placeholder(tf.uint8, shape = (batch_size), name = "labels")
+    optimizer = 
+    accuracy =
+    loss =
+    optimizer = tf.train.AdamOptimizer(LEARNING_RATE).minimize(loss)
+
     return input_data, labels, optimizer, accuracy, loss
