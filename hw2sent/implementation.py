@@ -15,7 +15,7 @@ NUM_REVIEWS = 25000
 WORDS_PER_REVIEW = 40
 
 # RNN hyperparameters
-LSTM_SIZE = 16
+LSTM_SIZE = 8
 LEARNING_RATE = 0.001
 
 def preprocess(rawstring):
@@ -165,17 +165,11 @@ def define_graph(glove_embeddings_arr):
     lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(LSTM_SIZE, forget_bias = 0.0, 
         state_is_tuple = True)
 
-    # initial state of cell all zeros
-    state = (tf.zeros([batch_size, LSTM_SIZE]), 
-        tf.zeros([batch_size, LSTM_SIZE]))
+    outputs, last_states = tf.nn.dynamic_rnn(cell = lstm_cell, 
+        dtype = tf.float32, 
+        sequence_length = tf.fill([batch_size], WORDS_PER_REVIEW), 
+        inputs = input_embeddings)
 
-    # unroll that recurrence
-    outputs = []
-    with tf.variable_scope("RNN"):
-        for i in range(WORDS_PER_REVIEW):
-            if i > 0: tf.get_variable_scope().reuse_variables()
-            cell_output, state = lstm_cell(input_embeddings[:, i], state)
-            outputs.append(cell_output)
     output = tf.reshape(tf.concat(outputs, 1), [batch_size, 
         LSTM_SIZE * WORDS_PER_REVIEW])
 

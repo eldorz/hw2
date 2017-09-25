@@ -36,13 +36,15 @@ def getTrainBatch():
 
 def getValidBatch():
     labels = []
-    arr = np.zeros([2500, seq_length])
-    for i in range(2500):
-        arr[i] = training_data[10000 + i]
-        labels.append([1, 0])
-    for i in range(2500):
-        arr[i] = training_data[22500 + i]
-        labels.append([0, 1])
+    arr = np.zeros([batch_size, seq_length])
+    for i in range(batch_size):
+        if (i % 2 == 0):
+            num = randint(10000, 12499)
+            labels.append([1, 0])
+        else:
+            num = randint(22500, 24999)
+            labels.append([0, 1])
+        arr[i] = training_data[num]
     return arr, labels
 
 # Call implementation
@@ -66,6 +68,8 @@ logdir = "tensorboard/" + datetime.datetime.now().strftime(
     "%Y%m%d-%H%M%S") + "/"
 writer = tf.summary.FileWriter(logdir, sess.graph)
 
+best_test_acc = 0
+best_i = 0
 for i in range(iterations):
     batch_data, batch_labels = getTrainBatch()
     sess.run(optimizer, {input_data: batch_data, labels: batch_labels})
@@ -87,7 +91,11 @@ for i in range(iterations):
         print("Iteration: ", i)
         print("loss", loss_value)
         print("acc", accuracy_value)
+        if test_acc > best_test_acc:
+            best_test_acc = test_acc
+            best_i = i
         print("test acc", test_acc)
+        print("best test acc", best_test_acc, "at timestep", best_i)
     if (i % 10000 == 0 and i != 0):
         if not os.path.exists(checkpoints_dir):
             os.makedirs(checkpoints_dir)
