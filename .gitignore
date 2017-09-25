@@ -106,3 +106,4 @@ ENV/
 hw2sent/reviews.tar.gz
 hw2sent/checkpoints/*
 hw2sent/tensorboard/*
+hw2sent/tensorflow_self_check.py

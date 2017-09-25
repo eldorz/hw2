@@ -6,6 +6,8 @@ import tarfile
 import re
 import string
 
+# Using tensorflow 1.3.0
+
 batch_size = 50
 GLOVE_DIM = 50
 GLOVE_MAX_VOCAB = 10000  # 400000 words in glove datasete
@@ -13,7 +15,7 @@ NUM_REVIEWS = 25000
 WORDS_PER_REVIEW = 40
 
 # RNN hyperparameters
-LSTM_SIZE = 4
+LSTM_SIZE = 16
 LEARNING_RATE = 0.001
 
 def preprocess(rawstring):
