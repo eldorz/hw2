@@ -12,6 +12,9 @@ GLOVE_MAX_VOCAB = 10000  # 400000 words in glove datasete
 NUM_REVIEWS = 25000
 WORDS_PER_REVIEW = 40
 
+# RNN hyperparameters
+LSTM_SIZE = 4
+
 def preprocess(rawstring):
     # stopwords
     stops = {'i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you',
@@ -150,7 +153,37 @@ def define_graph(glove_embeddings_arr):
     input_data = tf.placeholder(tf.int32,
         shape = (batch_size, WORDS_PER_REVIEW), name = "input_data")
     labels = tf.placeholder(tf.uint8, shape = (batch_size), name = "labels")
-    optimizer = 
+
+    # substitute embeddings for word indices
+    embeddings = tf.constant(glove_embeddings_arr)
+    input_embeddings = tf.nn.embedding_lookup(embeddings, input_data)
+
+    # simple lstm cell
+    lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(LSTM_SIZE, forget_bias = 0.0, 
+        state_is_tuple = True)
+
+    # initial state of cell all zeros
+    state = (tf.zeros([batch_size, LSTM_SIZE]), 
+        tf.zeros([batch_size, LSTM_SIZE]))
+
+    # unroll that recurrence
+    outputs = []
+    with tf.variable_scope("RNN"):
+        for i in range(WORDS_PER_REVIEW):
+            if i > 0: tf.get_variable_scope().reuse_variables()
+            cell_output, state = lstm_cell(input_embeddings[:, i], state)
+            outputs.append(cell_output)
+    output = tf.reshape(tf.concat(outputs, 1), [batch_size, 
+        LSTM_SIZE * WORDS_PER_REVIEW])
+
+    # binary classifier layer
+    w = tf.Variable(tf.random_normal([LSTM_SIZE * WORDS_PER_REVIEW]),
+        name = "binary classifier weights", dtype = tf.float32)
+    b = tf.Variable(tf.zeros([LSTM_SIZE * WORDS_PER_REVIEW]),
+        name = "binary classifier biases", dtype = tf.float32)
+    logits = tf.matmul(output, w) + b
+    
+
     accuracy =
     loss =
     optimizer = tf.train.AdamOptimizer(LEARNING_RATE).minimize(loss)
