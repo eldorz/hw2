@@ -104,3 +104,5 @@ ENV/
 *.txt
 *.npy
 hw2sent/reviews.tar.gz
+hw2sent/checkpoints/*
+hw2sent/tensorboard/*

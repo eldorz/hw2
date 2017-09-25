@@ -14,6 +14,7 @@ WORDS_PER_REVIEW = 40
 
 # RNN hyperparameters
 LSTM_SIZE = 4
+LEARNING_RATE = 0.001
 
 def preprocess(rawstring):
     # stopwords
@@ -152,7 +153,7 @@ def define_graph(glove_embeddings_arr):
 
     input_data = tf.placeholder(tf.int32,
         shape = (batch_size, WORDS_PER_REVIEW), name = "input_data")
-    labels = tf.placeholder(tf.uint8, shape = (batch_size), name = "labels")
+    labels = tf.placeholder(tf.int32, shape = (batch_size, 2), name = "labels")
 
     # substitute embeddings for word indices
     embeddings = tf.constant(glove_embeddings_arr)
@@ -177,15 +178,21 @@ def define_graph(glove_embeddings_arr):
         LSTM_SIZE * WORDS_PER_REVIEW])
 
     # binary classifier layer
-    w = tf.Variable(tf.random_normal([LSTM_SIZE * WORDS_PER_REVIEW]),
-        name = "binary classifier weights", dtype = tf.float32)
-    b = tf.Variable(tf.zeros([LSTM_SIZE * WORDS_PER_REVIEW]),
-        name = "binary classifier biases", dtype = tf.float32)
+    w = tf.Variable(
+        tf.random_normal([LSTM_SIZE * WORDS_PER_REVIEW, 2]),
+        name = "binary_classifier_weights", dtype = tf.float32)
+    b = tf.Variable(tf.zeros([2]),
+        name = "binary_classifier_bias", dtype = tf.float32)
     logits = tf.matmul(output, w) + b
+    preds = tf.argmax(logits, 1, output_type = tf.int32)
+    label_argmax = tf.argmax(labels, 1, output_type = tf.int32)
+    correct = tf.equal(label_argmax, preds)
+    accuracy = tf.reduce_mean(tf.cast(correct, tf.float32), name = "accuracy")
     
-
-    accuracy =
-    loss =
+    # binary cross-entropy loss
+    cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
+        labels = labels, logits = logits, name = "softmax_cross_entropy")
+    loss = tf.reduce_mean(cross_entropy, name = "loss")
     optimizer = tf.train.AdamOptimizer(LEARNING_RATE).minimize(loss)
 
     return input_data, labels, optimizer, accuracy, loss
