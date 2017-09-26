@@ -70,6 +70,7 @@ writer = tf.summary.FileWriter(logdir, sess.graph)
 
 best_test_acc = 0
 best_i = 0
+alpha = 0.95
 for i in range(iterations):
     batch_data, batch_labels = getTrainBatch()
     sess.run(optimizer, {input_data: batch_data, labels: batch_labels})
@@ -96,6 +97,8 @@ for i in range(iterations):
             best_i = i
         print("test acc", test_acc)
         print("best test acc", best_test_acc, "at timestep", best_i)
+        smoothed_acc = alpha * smoothed_acc + (1 - alpha) * test_acc
+        print("smoothed accuracy", smoothed_acc)
     if (i % 10000 == 0 and i != 0):
         if not os.path.exists(checkpoints_dir):
             os.makedirs(checkpoints_dir)

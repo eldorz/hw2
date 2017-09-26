@@ -5,6 +5,7 @@ import os
 import tarfile
 import re
 import string
+import math
 
 # Using tensorflow 1.3.0
 
@@ -16,7 +17,11 @@ WORDS_PER_REVIEW = 40
 
 # RNN hyperparameters
 LSTM_SIZE = 8
-LEARNING_RATE = 0.001
+RNN_LAYERS = 2
+LEARNING_RATE = 0.005
+
+# binary classifier hyperparameters
+BIN_CLASS_HIDDEN_SIZE = 32
 
 def preprocess(rawstring):
     # stopwords
@@ -138,6 +143,10 @@ def load_glove_embeddings():
 
     return embeddings, word_index_dict
 
+def lstm_cell():
+    return tf.nn.rnn_cell.BasicLSTMCell(LSTM_SIZE, forget_bias = 0.0, 
+        state_is_tuple = True)
+
 
 def define_graph(glove_embeddings_arr):
     """
@@ -161,34 +170,53 @@ def define_graph(glove_embeddings_arr):
     embeddings = tf.constant(glove_embeddings_arr)
     input_embeddings = tf.nn.embedding_lookup(embeddings, input_data)
 
-    # simple lstm cell
-    lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(LSTM_SIZE, forget_bias = 0.0, 
+    # multilayer lstm cell
+    stacked_lstm_cell = tf.nn.rnn_cell.MultiRNNCell(
+        [lstm_cell() for _ in range(RNN_LAYERS)], 
         state_is_tuple = True)
 
-    outputs, last_states = tf.nn.bidirectional_dynamic_rnn(
-        cell_fw = lstm_cell,
-        cell_bw = lstm_cell, 
+    outputs, last_states = tf.nn.dynamic_rnn(
+        cell = stacked_lstm_cell,
         dtype = tf.float32, 
         sequence_length = tf.fill([batch_size], WORDS_PER_REVIEW), 
         inputs = input_embeddings)
 
-    outputs_fw = outputs[0]
-    outputs_bw = outputs[1]
-    output_fw = tf.reshape(tf.concat(outputs_fw, 1), 
-        [batch_size, LSTM_SIZE * WORDS_PER_REVIEW])
-    output_bw = tf.reshape(tf.concat(outputs_bw, 1), 
+    output = tf.reshape(tf.concat(outputs, 1), 
         [batch_size, LSTM_SIZE * WORDS_PER_REVIEW])
 
-    output = tf.concat([output_fw, output_bw], 1)
-    print(output)
+    # two-layer binary classifier layer
+    # in     LSTM_SIZE * WORDS_PER_REVIEW
+    # hidden BIN_CLASS_HIDDEN_SIZE
+    # out    2
 
-    # binary classifier layer
-    w = tf.Variable(
-        tf.random_normal([LSTM_SIZE * WORDS_PER_REVIEW * 2, 2]),
-        name = "binary_classifier_weights", dtype = tf.float32)
-    b = tf.Variable(tf.zeros([2]),
-        name = "binary_classifier_bias", dtype = tf.float32)
-    logits = tf.matmul(output, w) + b
+    # He initialisation var(W) = 2 / n(in)
+    var1 = 2 / LSTM_SIZE * WORDS_PER_REVIEW 
+    std_dev1 = math.sqrt(var1)
+    var2 = 2 / BIN_CLASS_HIDDEN_SIZE
+    std_dev2 = math.sqrt(var2)
+
+    # layer 1 parameters
+    w1 = tf.Variable(
+        tf.random_normal([LSTM_SIZE * WORDS_PER_REVIEW, 
+            BIN_CLASS_HIDDEN_SIZE], stddev = std_dev1),
+        name = "bin_class_layer_1_weights", 
+        dtype = tf.float32)
+    b1 = tf.Variable(tf.zeros([BIN_CLASS_HIDDEN_SIZE]),
+        name = "bin_class_layer_1_biases", 
+        dtype = tf.float32)
+
+    # layer 2 parameters
+    w2 = tf.Variable(
+        tf.random_normal([BIN_CLASS_HIDDEN_SIZE, 2], stddev = std_dev2), 
+        name = "bin_class_layer_2_weights", 
+        dtype = tf.float32)
+    b2 = tf.Variable(tf.zeros([2]), 
+        name = "bin_class_layer_2_biases", 
+        dtype = tf.float32)
+
+    layer1_activation = tf.matmul(output, w1) + b1
+    layer1_output = tf.nn.relu(layer1_activation)
+    logits = tf.matmul(layer1_output, w2) + b2
     preds = tf.argmax(logits, 1, output_type = tf.int32)
     label_argmax = tf.argmax(labels, 1, output_type = tf.int32)
     correct = tf.equal(label_argmax, preds)
