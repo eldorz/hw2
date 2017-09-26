@@ -16,6 +16,20 @@ GLOVE_MAX_VOCAB = 10000  # 400000 words in glove datasete
 NUM_REVIEWS = 25000
 WORDS_PER_REVIEW = 40
 
+'''
+# global hyperparameters
+DROPOUT_KEEP_PROB = 1.0
+
+# RNN hyperparameters
+LSTM_SIZE = 16
+RNN_LAYERS = 1
+LEARNING_RATE = 0.005
+
+# binary classifier hyperparameters
+BIN_CLASS_LAYERS = 1
+BIN_CLASS_HIDDEN_SIZE = 32
+'''
+
 # global hyperparameters
 DROPOUT_KEEP_PROB = random.uniform(0.5,1.0)
 
@@ -170,6 +184,7 @@ def load_glove_embeddings():
 def lstm_cell():
     cell = tf.nn.rnn_cell.BasicLSTMCell(LSTM_SIZE, forget_bias = 0.0, 
         state_is_tuple = True)
+    #cell = tf.nn.rnn_cell.GRUCell(LSTM_SIZE)
     cell = tf.nn.rnn_cell.DropoutWrapper(cell, DROPOUT_KEEP_PROB)
     return cell
 
