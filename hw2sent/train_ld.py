@@ -105,6 +105,7 @@ for i in range(iterations):
         if smoothed_acc > best_smooth_acc:
             best_smooth_acc = smoothed_acc
             best_i = i
+        print("best smoothed accuracy", best_smooth_acc)
 
     if (i % 10000 == 0 and i != 0):
         if not os.path.exists(logdir):
@@ -114,10 +115,12 @@ for i in range(iterations):
                                    global_step=i)
         print("Saved model to %s" % save_path)
 
+    if (i > 5000 and best_smooth_acc < 0.6): break
+
 # write best performance to file       
-file = open("log.txt", "w")
-file.write(best_smooth_acc + " " + best_i)
-file.write("\n")
+file = open("log.txt", "a")
+file.write("best smoothed accuracy   : {0}".format(best_smooth_acc) + "\n")
+file.write("at iteration             : {0}".format(best_i) + "\n\n")
 file.close()
 
 sess.close()

@@ -17,19 +17,20 @@ NUM_REVIEWS = 25000
 WORDS_PER_REVIEW = 40
 
 # global hyperparameters
-DROPOUT_KEEP_PROB = random.random()
+DROPOUT_KEEP_PROB = random.uniform(0.5,1.0)
 
 # RNN hyperparameters
-LSTM_SIZE = random.randint(1, 256)
-RNN_LAYERS = random.randint(1, 4)
-LEARNING_RATE = random.uniform(0.001, 0.1)
+LSTM_SIZE = random.randint(1, 64)
+RNN_LAYERS = random.randint(1, 3)
+LEARNING_RATE = random.uniform(0.001, 0.01)
 
 # binary classifier hyperparameters
 BIN_CLASS_LAYERS = random.randint(1, 2)
 BIN_CLASS_HIDDEN_SIZE = random.randint(1, 256)
 
-file = open("log.txt", "w")
+file = open("log.txt", "a")
 file.write("DROPOUT_KEEP_PROB     : {0}".format(DROPOUT_KEEP_PROB) + "\n")
+file.write("LSTM_SIZE             : {0}".format(LSTM_SIZE) + "\n")
 file.write("RNN_LAYERS            : {0}".format(RNN_LAYERS) + "\n")
 file.write("LEARNING_RATE         : {0}".format(LEARNING_RATE) + "\n")
 file.write("BIN_CLASS_LAYERS      : {0}".format(BIN_CLASS_LAYERS) + "\n")
