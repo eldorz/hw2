@@ -15,8 +15,11 @@ GLOVE_MAX_VOCAB = 10000  # 400000 words in glove datasete
 NUM_REVIEWS = 25000
 WORDS_PER_REVIEW = 40
 
+# global hyperparameters
+DROPOUT_KEEP_PROB = 0.5
+
 # RNN hyperparameters
-LSTM_SIZE = 8
+LSTM_SIZE = 16
 RNN_LAYERS = 2
 LEARNING_RATE = 0.005
 
@@ -144,8 +147,10 @@ def load_glove_embeddings():
     return embeddings, word_index_dict
 
 def lstm_cell():
-    return tf.nn.rnn_cell.BasicLSTMCell(LSTM_SIZE, forget_bias = 0.0, 
+    cell = tf.nn.rnn_cell.BasicLSTMCell(LSTM_SIZE, forget_bias = 0.0, 
         state_is_tuple = True)
+    cell = tf.nn.rnn_cell.DropoutWrapper(cell, DROPOUT_KEEP_PROB)
+    return cell
 
 
 def define_graph(glove_embeddings_arr):
@@ -169,6 +174,9 @@ def define_graph(glove_embeddings_arr):
     # substitute embeddings for word indices
     embeddings = tf.constant(glove_embeddings_arr)
     input_embeddings = tf.nn.embedding_lookup(embeddings, input_data)
+
+    # dropout on inputs
+    input_embeddings = tf.nn.dropout(input_embeddings, DROPOUT_KEEP_PROB)
 
     # multilayer lstm cell
     stacked_lstm_cell = tf.nn.rnn_cell.MultiRNNCell(
@@ -214,9 +222,20 @@ def define_graph(glove_embeddings_arr):
         name = "bin_class_layer_2_biases", 
         dtype = tf.float32)
 
+    # rnn to layer 1 dropout
+    output = tf.nn.dropout(output, DROPOUT_KEEP_PROB)
+
+    # layer 1
     layer1_activation = tf.matmul(output, w1) + b1
     layer1_output = tf.nn.relu(layer1_activation)
+
+    # layer 1 to layer 2 dropout
+    layer1_output = tf.nn.dropout(layer1_output, DROPOUT_KEEP_PROB)
+
+    # layer2
     logits = tf.matmul(layer1_output, w2) + b2
+
+    # stats
     preds = tf.argmax(logits, 1, output_type = tf.int32)
     label_argmax = tf.argmax(labels, 1, output_type = tf.int32)
     correct = tf.equal(label_argmax, preds)
@@ -226,6 +245,8 @@ def define_graph(glove_embeddings_arr):
     cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
         labels = labels, logits = logits, name = "softmax_cross_entropy")
     loss = tf.reduce_mean(cross_entropy, name = "loss")
+
+    # optimiser
     optimizer = tf.train.AdamOptimizer(LEARNING_RATE).minimize(loss)
 
     return input_data, labels, optimizer, accuracy, loss

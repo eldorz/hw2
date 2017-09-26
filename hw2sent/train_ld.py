@@ -71,6 +71,7 @@ writer = tf.summary.FileWriter(logdir, sess.graph)
 best_test_acc = 0
 best_i = 0
 alpha = 0.95
+smoothed_acc = 0.5
 for i in range(iterations):
     batch_data, batch_labels = getTrainBatch()
     sess.run(optimizer, {input_data: batch_data, labels: batch_labels})
