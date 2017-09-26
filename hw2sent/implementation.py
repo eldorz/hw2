@@ -16,7 +16,7 @@ NUM_REVIEWS = 25000
 WORDS_PER_REVIEW = 40
 
 # global hyperparameters
-DROPOUT_KEEP_PROB = 0.5
+DROPOUT_KEEP_PROB = 0.75
 
 # RNN hyperparameters
 LSTM_SIZE = 16
@@ -152,6 +152,17 @@ def lstm_cell():
     cell = tf.nn.rnn_cell.DropoutWrapper(cell, DROPOUT_KEEP_PROB)
     return cell
 
+def onelayer(input_tensor):
+    output = tf.layers.dense(input_tensor, 2, name = "bin_class_layer_1")
+    return output
+
+def twolayer(input_tensor):
+    layer_one_output = tf.layers.dense(input_tensor, BIN_CLASS_HIDDEN_SIZE, 
+        name = "bin_class_layer_1")
+    layer_one_output = tf.nn.dropout(layer_one_output, DROPOUT_KEEP_PROB)
+    output = tf.layers.dense(layer_one_output, 2, 
+        name = "bin_class_layer_2")
+    return output
 
 def define_graph(glove_embeddings_arr):
     """
@@ -172,11 +183,13 @@ def define_graph(glove_embeddings_arr):
     labels = tf.placeholder(tf.int32, shape = (batch_size, 2), name = "labels")
 
     # substitute embeddings for word indices
-    embeddings = tf.constant(glove_embeddings_arr)
-    input_embeddings = tf.nn.embedding_lookup(embeddings, input_data)
+    embeddings = tf.constant(glove_embeddings_arr, name = "embeddings")
+    input_embeddings = tf.nn.embedding_lookup(embeddings, input_data, 
+        name = "input_embeddings")
 
     # dropout on inputs
-    input_embeddings = tf.nn.dropout(input_embeddings, DROPOUT_KEEP_PROB)
+    input_embeddings = tf.nn.dropout(input_embeddings, DROPOUT_KEEP_PROB, 
+        name = "input_dropout")
 
     # multilayer lstm cell
     stacked_lstm_cell = tf.nn.rnn_cell.MultiRNNCell(
@@ -192,53 +205,21 @@ def define_graph(glove_embeddings_arr):
     output = tf.reshape(tf.concat(outputs, 1), 
         [batch_size, LSTM_SIZE * WORDS_PER_REVIEW])
 
-    # two-layer binary classifier layer
-    # in     LSTM_SIZE * WORDS_PER_REVIEW
-    # hidden BIN_CLASS_HIDDEN_SIZE
-    # out    2
-
-    # He initialisation var(W) = 2 / n(in)
-    var1 = 2 / LSTM_SIZE * WORDS_PER_REVIEW 
-    std_dev1 = math.sqrt(var1)
-    var2 = 2 / BIN_CLASS_HIDDEN_SIZE
-    std_dev2 = math.sqrt(var2)
-
-    # layer 1 parameters
-    w1 = tf.Variable(
-        tf.random_normal([LSTM_SIZE * WORDS_PER_REVIEW, 
-            BIN_CLASS_HIDDEN_SIZE], stddev = std_dev1),
-        name = "bin_class_layer_1_weights", 
-        dtype = tf.float32)
-    b1 = tf.Variable(tf.zeros([BIN_CLASS_HIDDEN_SIZE]),
-        name = "bin_class_layer_1_biases", 
-        dtype = tf.float32)
-
-    # layer 2 parameters
-    w2 = tf.Variable(
-        tf.random_normal([BIN_CLASS_HIDDEN_SIZE, 2], stddev = std_dev2), 
-        name = "bin_class_layer_2_weights", 
-        dtype = tf.float32)
-    b2 = tf.Variable(tf.zeros([2]), 
-        name = "bin_class_layer_2_biases", 
-        dtype = tf.float32)
-
     # rnn to layer 1 dropout
-    output = tf.nn.dropout(output, DROPOUT_KEEP_PROB)
+    output = tf.nn.dropout(output, DROPOUT_KEEP_PROB, 
+        name = "rnn_to_layer_1_dropout")
 
-    # layer 1
-    layer1_activation = tf.matmul(output, w1) + b1
-    layer1_output = tf.nn.relu(layer1_activation)
+    # one-layer binary classifier
+    #logits = onelayer(output)
 
-    # layer 1 to layer 2 dropout
-    layer1_output = tf.nn.dropout(layer1_output, DROPOUT_KEEP_PROB)
-
-    # layer2
-    logits = tf.matmul(layer1_output, w2) + b2
-
+    # two-layer binary classifier
+    logits = twolayer(output)
+    
     # stats
-    preds = tf.argmax(logits, 1, output_type = tf.int32)
-    label_argmax = tf.argmax(labels, 1, output_type = tf.int32)
-    correct = tf.equal(label_argmax, preds)
+    preds = tf.argmax(logits, 1, output_type = tf.int32, name = "predictions")
+    label_argmax = tf.argmax(labels, 1, output_type = tf.int32, 
+        name = "label_argmax")
+    correct = tf.equal(label_argmax, preds, name = "correct")
     accuracy = tf.reduce_mean(tf.cast(correct, tf.float32), name = "accuracy")
     
     # binary cross-entropy loss
