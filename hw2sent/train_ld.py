@@ -16,7 +16,7 @@ import os
 import implementation as imp
 
 batch_size = imp.batch_size
-iterations = 100000
+iterations = 30000
 seq_length = 40  # Maximum length of sentence
 
 checkpoints_dir = "./checkpoints"
@@ -72,6 +72,8 @@ best_test_acc = 0
 best_i = 0
 alpha = 0.95
 smoothed_acc = 0.5
+best_smooth_acc = 0
+
 for i in range(iterations):
     batch_data, batch_labels = getTrainBatch()
     sess.run(optimizer, {input_data: batch_data, labels: batch_labels})
@@ -90,21 +92,32 @@ for i in range(iterations):
              labels: test_labels})
         writer.add_summary(test_summ, i)
 
+        print()
         print("Iteration: ", i)
         print("loss", loss_value)
         print("acc", accuracy_value)
         if test_acc > best_test_acc:
             best_test_acc = test_acc
-            best_i = i
         print("test acc", test_acc)
         print("best test acc", best_test_acc, "at timestep", best_i)
         smoothed_acc = alpha * smoothed_acc + (1 - alpha) * test_acc
         print("smoothed accuracy", smoothed_acc)
+        if smoothed_acc > best_smooth_acc:
+            best_smooth_acc = smoothed_acc
+            best_i = i
+
     if (i % 10000 == 0 and i != 0):
-        if not os.path.exists(checkpoints_dir):
-            os.makedirs(checkpoints_dir)
-        save_path = all_saver.save(sess, checkpoints_dir +
-                                   "/trained_model.ckpt",
+        if not os.path.exists(logdir):
+            os.makedirs(logdir)
+        save_path = all_saver.save(sess, logdir +
+                                   "/model.ckpt",
                                    global_step=i)
         print("Saved model to %s" % save_path)
+
+# write best performance to file       
+file = open("log.txt", "w")
+file.write(best_smooth_acc + " " + best_i)
+file.write("\n")
+file.close()
+
 sess.close()

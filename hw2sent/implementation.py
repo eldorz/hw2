@@ -6,6 +6,7 @@ import tarfile
 import re
 import string
 import math
+import random
 
 # Using tensorflow 1.3.0
 
@@ -16,15 +17,24 @@ NUM_REVIEWS = 25000
 WORDS_PER_REVIEW = 40
 
 # global hyperparameters
-DROPOUT_KEEP_PROB = 0.75
+DROPOUT_KEEP_PROB = random.random()
 
 # RNN hyperparameters
-LSTM_SIZE = 16
-RNN_LAYERS = 2
-LEARNING_RATE = 0.005
+LSTM_SIZE = random.randint(1, 256)
+RNN_LAYERS = random.randint(1, 4)
+LEARNING_RATE = random.uniform(0.001, 0.1)
 
 # binary classifier hyperparameters
-BIN_CLASS_HIDDEN_SIZE = 32
+BIN_CLASS_LAYERS = random.randint(1, 2)
+BIN_CLASS_HIDDEN_SIZE = random.randint(1, 256)
+
+file = open("log.txt", "w")
+file.write("DROPOUT_KEEP_PROB     : {0}".format(DROPOUT_KEEP_PROB) + "\n")
+file.write("RNN_LAYERS            : {0}".format(RNN_LAYERS) + "\n")
+file.write("LEARNING_RATE         : {0}".format(LEARNING_RATE) + "\n")
+file.write("BIN_CLASS_LAYERS      : {0}".format(BIN_CLASS_LAYERS) + "\n")
+file.write("BIN_CLASS_HIDDEN_SIZE : {0}".format(BIN_CLASS_HIDDEN_SIZE) + "\n")
+file.close()
 
 def preprocess(rawstring):
     # stopwords
@@ -42,16 +52,14 @@ def preprocess(rawstring):
         'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any', 'both',
         'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor',
         'only', 'own', 'same', 'so', 'than', 'too', 'can', 'will'}
-
     nobr = re.sub(r'<br>', ' ', rawstring)
     no_punct = ''.join(c for c in nobr if c not in string.punctuation)
     lower = no_punct.lower()
     words = lower.split()
     processed = []
     for w in words:
-        if w not in stops: continue
+        if w in stops: continue
         processed.append(w)
-
     return processed
 
 
@@ -79,6 +87,10 @@ def load_data(glove_dict):
             tarball.extractall(os.path.join(dir, 'reviews/'))
 
     # load and preprocess
+    
+    # debug
+    my_word_list = set()
+
     file_list = glob.glob(os.path.join(dir, 'reviews/pos/*'))
     file_list.extend(glob.glob(os.path.join(dir, 'reviews/neg/*')))
     assert(len(file_list) == NUM_REVIEWS)
@@ -95,6 +107,8 @@ def load_data(glove_dict):
                 if w in glove_dict:
                     # add index of known word
                     word_indices.append(glove_dict[w]) 
+                    #debug
+                    my_word_list.add(w)
                 else:
                     # add the index of the unknown word
                     word_indices.append(glove_dict['UNK'])
@@ -109,6 +123,12 @@ def load_data(glove_dict):
         filenum += 1
         
     np.save("data", data)
+
+    # debug
+    file = open("words.txt", "w")
+    for w in my_word_list:
+        file.write(w + " ")
+    file.close()
 
     return data
 
@@ -158,10 +178,9 @@ def onelayer(input_tensor):
 
 def twolayer(input_tensor):
     layer_one_output = tf.layers.dense(input_tensor, BIN_CLASS_HIDDEN_SIZE, 
-        name = "bin_class_layer_1")
+        name = "bin_class_layer_1", activation = tf.nn.relu)
     layer_one_output = tf.nn.dropout(layer_one_output, DROPOUT_KEEP_PROB)
-    output = tf.layers.dense(layer_one_output, 2, 
-        name = "bin_class_layer_2")
+    output = tf.layers.dense(layer_one_output, 2, name = "bin_class_layer_2")
     return output
 
 def define_graph(glove_embeddings_arr):
@@ -209,11 +228,11 @@ def define_graph(glove_embeddings_arr):
     output = tf.nn.dropout(output, DROPOUT_KEEP_PROB, 
         name = "rnn_to_layer_1_dropout")
 
-    # one-layer binary classifier
-    #logits = onelayer(output)
-
-    # two-layer binary classifier
-    logits = twolayer(output)
+    # binary classifier
+    if BIN_CLASS_LAYERS == 1:
+        logits = onelayer(output)
+    else:
+        logits = twolayer(output)
     
     # stats
     preds = tf.argmax(logits, 1, output_type = tf.int32, name = "predictions")
