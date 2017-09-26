@@ -165,17 +165,26 @@ def define_graph(glove_embeddings_arr):
     lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(LSTM_SIZE, forget_bias = 0.0, 
         state_is_tuple = True)
 
-    outputs, last_states = tf.nn.dynamic_rnn(cell = lstm_cell, 
+    outputs, last_states = tf.nn.bidirectional_dynamic_rnn(
+        cell_fw = lstm_cell,
+        cell_bw = lstm_cell, 
         dtype = tf.float32, 
         sequence_length = tf.fill([batch_size], WORDS_PER_REVIEW), 
         inputs = input_embeddings)
 
-    output = tf.reshape(tf.concat(outputs, 1), [batch_size, 
-        LSTM_SIZE * WORDS_PER_REVIEW])
+    outputs_fw = outputs[0]
+    outputs_bw = outputs[1]
+    output_fw = tf.reshape(tf.concat(outputs_fw, 1), 
+        [batch_size, LSTM_SIZE * WORDS_PER_REVIEW])
+    output_bw = tf.reshape(tf.concat(outputs_bw, 1), 
+        [batch_size, LSTM_SIZE * WORDS_PER_REVIEW])
+
+    output = tf.concat([output_fw, output_bw], 1)
+    print(output)
 
     # binary classifier layer
     w = tf.Variable(
-        tf.random_normal([LSTM_SIZE * WORDS_PER_REVIEW, 2]),
+        tf.random_normal([LSTM_SIZE * WORDS_PER_REVIEW * 2, 2]),
         name = "binary_classifier_weights", dtype = tf.float32)
     b = tf.Variable(tf.zeros([2]),
         name = "binary_classifier_bias", dtype = tf.float32)
