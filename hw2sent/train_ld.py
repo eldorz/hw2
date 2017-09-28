@@ -16,7 +16,7 @@ import os
 import implementation as imp
 
 batch_size = imp.batch_size
-iterations = 100000
+iterations = 50000
 seq_length = 40  # Maximum length of sentence
 
 checkpoints_dir = "./checkpoints"
@@ -50,7 +50,8 @@ def getValidBatch():
 # Call implementation
 glove_array, glove_dict = imp.load_glove_embeddings()
 training_data = imp.load_data(glove_dict)
-input_data, labels, optimizer, accuracy, loss = imp.define_graph(glove_array)
+input_data, labels, optimizer, accuracy, loss, dropout_on, dropout_off = \
+    imp.define_graph(glove_array)
 
 # tensorboard
 train_accuracy_op = tf.summary.scalar("training_accuracy", accuracy)
@@ -74,6 +75,8 @@ alpha = 0.95
 smoothed_acc = 0.5
 best_smooth_acc = 0
 
+sess.run(dropout_on)
+
 for i in range(iterations):
     batch_data, batch_labels = getTrainBatch()
     sess.run(optimizer, {input_data: batch_data, labels: batch_labels})
@@ -86,10 +89,13 @@ for i in range(iterations):
 
         # run on test data
         test_data, test_labels = getValidBatch()
+        sess.run(dropout_off)
         test_acc, test_summ = sess.run(
             [accuracy, test_accuracy_op],
             {input_data: test_data,
              labels: test_labels})
+        sess.run(dropout_on)
+
         writer.add_summary(test_summ, i)
 
         print()

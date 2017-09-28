@@ -18,30 +18,30 @@ WORDS_PER_REVIEW = 40
 
 
 # global hyperparameters
-DROPOUT_KEEP_PROB = 0.5
+'''
+DROPOUT_KEEP_PROB = 0.7
 
 # RNN hyperparameters
-LSTM_SIZE = 32
-RNN_LAYERS = 3
+LSTM_SIZE = 16
+RNN_LAYERS = 4
 LEARNING_RATE = 0.005
 
 # binary classifier hyperparameters
-BIN_CLASS_LAYERS = 1
-BIN_CLASS_HIDDEN_SIZE = 32
-
+BIN_CLASS_LAYERS = 2
+BIN_CLASS_HIDDEN_SIZE = 128
 '''
 # global hyperparameters
-DROPOUT_KEEP_PROB = random.uniform(0.5,1.0)
+DROPOUT_KEEP_PROB = random.gauss(0.7, 0.2)
 
 # RNN hyperparameters
-LSTM_SIZE = random.randint(1, 64)
-RNN_LAYERS = random.randint(1, 3)
-LEARNING_RATE = random.uniform(0.001, 0.01)
+LSTM_SIZE = max(2, int(random.gauss(14.0, 10.0)))
+RNN_LAYERS = max(1, int(random.gauss(4.0, 3.0)))
+LEARNING_RATE = random.gauss(0.006, 0.001)
 
 # binary classifier hyperparameters
 BIN_CLASS_LAYERS = random.randint(1, 2)
-BIN_CLASS_HIDDEN_SIZE = random.randint(1, 256)
-'''
+BIN_CLASS_HIDDEN_SIZE = max(2, int(random.gauss(100.0, 50.0)))
+
 file = open("log.txt", "a")
 file.write("DROPOUT_KEEP_PROB     : {0}".format(DROPOUT_KEEP_PROB) + "\n")
 file.write("LSTM_SIZE             : {0}".format(LSTM_SIZE) + "\n")
@@ -62,11 +62,10 @@ def preprocess(rawstring):
         'does', 'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if', 'or',
         'because', 'as', 'until', 'while', 'of', 'at', 'by', 'for', 'with',
         'about', 'against', 'between', 'into', 'through', 'during', 'before',
-        'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in', 'out',
-        'on', 'off', 'over', 'under', 'again', 'further', 'then', 'once',
+        'after', 'to', 'from', 'up', 'down', 'again', 'further', 'then', 'once',
         'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any', 'both',
-        'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor',
-        'only', 'own', 'same', 'so', 'than', 'too', 'can', 'will'}
+        'each', 'few', 'more', 'most', 'other', 'some', 'such', 'so', 'than', 
+        'too', 'can'}
     nobr = re.sub(r'<br>', ' ', rawstring)
     no_punct = ''.join(c for c in nobr if c not in string.punctuation)
     lower = no_punct.lower()
@@ -181,7 +180,7 @@ def load_glove_embeddings():
 
     return embeddings, word_index_dict
 
-def lstm_cell():
+def lstm_cell(dropout_keep):
     cell = tf.nn.rnn_cell.BasicLSTMCell(LSTM_SIZE, forget_bias = 0.0, 
         state_is_tuple = True)
     #cell = tf.nn.rnn_cell.GRUCell(LSTM_SIZE)
@@ -189,16 +188,17 @@ def lstm_cell():
         input_keep_prob = DROPOUT_KEEP_PROB,
         output_keep_prob = 1.0,
         state_keep_prob = 1.0)
+
     return cell
 
-def onelayer(input_tensor):
+def onelayer(input_tensor, dropout_keep):
     output = tf.layers.dense(input_tensor, 2, name = "bin_class_layer_1")
     return output
 
-def twolayer(input_tensor):
+def twolayer(input_tensor, dropout_keep):
     layer_one_output = tf.layers.dense(input_tensor, BIN_CLASS_HIDDEN_SIZE, 
         name = "bin_class_layer_1", activation = tf.nn.relu)
-    layer_one_output = tf.nn.dropout(layer_one_output, DROPOUT_KEEP_PROB)
+    layer_one_output = tf.nn.dropout(layer_one_output, dropout_keep)
     output = tf.layers.dense(layer_one_output, 2, name = "bin_class_layer_2")
     return output
 
@@ -216,6 +216,11 @@ def define_graph(glove_embeddings_arr):
     RETURN: input placeholder, labels placeholder, optimizer, accuracy and loss
     tensors"""
 
+    dropout_keep = tf.get_variable("dropout_keep", dtype = tf.float32,
+        initializer = tf.constant(1.0))
+    dropout_off = dropout_keep.assign(1.0)
+    dropout_on = dropout_keep.assign(DROPOUT_KEEP_PROB)
+
     input_data = tf.placeholder(tf.int32,
         shape = (batch_size, WORDS_PER_REVIEW), name = "input_data")
     labels = tf.placeholder(tf.int32, shape = (batch_size, 2), name = "labels")
@@ -227,7 +232,7 @@ def define_graph(glove_embeddings_arr):
 
     # multilayer lstm cell
     stacked_lstm_cell = tf.nn.rnn_cell.MultiRNNCell(
-        [lstm_cell() for _ in range(RNN_LAYERS)], 
+        [lstm_cell(dropout_keep) for _ in range(RNN_LAYERS)], 
         state_is_tuple = True)
 
     outputs, last_states = tf.nn.dynamic_rnn(
@@ -240,14 +245,14 @@ def define_graph(glove_embeddings_arr):
         [batch_size, LSTM_SIZE * WORDS_PER_REVIEW])
 
     # rnn to layer 1 dropout
-    output = tf.nn.dropout(output, DROPOUT_KEEP_PROB, 
+    output = tf.nn.dropout(output, dropout_keep, 
         name = "rnn_to_layer_1_dropout")
 
     # binary classifier
     if BIN_CLASS_LAYERS == 1:
-        logits = onelayer(output)
+        logits = onelayer(output, dropout_keep)
     else:
-        logits = twolayer(output)
+        logits = twolayer(output, dropout_keep)
     
     # stats
     preds = tf.argmax(logits, 1, output_type = tf.int32, name = "predictions")
@@ -264,4 +269,4 @@ def define_graph(glove_embeddings_arr):
     # optimiser
     optimizer = tf.train.AdamOptimizer(LEARNING_RATE).minimize(loss)
 
-    return input_data, labels, optimizer, accuracy, loss
+    return input_data, labels, optimizer, accuracy, loss, dropout_on, dropout_off
