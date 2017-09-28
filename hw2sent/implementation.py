@@ -18,29 +18,29 @@ WORDS_PER_REVIEW = 40
 
 '''
 # global hyperparameters
-DROPOUT_KEEP_PROB = 1.0
+DROPOUT_KEEP_PROB = 0.7
 
 # RNN hyperparameters
 LSTM_SIZE = 16
-RNN_LAYERS = 1
+RNN_LAYERS = 4
 LEARNING_RATE = 0.005
 
 # binary classifier hyperparameters
-BIN_CLASS_LAYERS = 1
-BIN_CLASS_HIDDEN_SIZE = 32
+BIN_CLASS_LAYERS = 2
+BIN_CLASS_HIDDEN_SIZE = 128
 '''
 
 # global hyperparameters
-DROPOUT_KEEP_PROB = np.random.uniform(0.5,1.0)
+DROPOUT_KEEP_PROB = random.gauss(0.7, 0.2)
 
 # RNN hyperparameters
-LSTM_SIZE = int(random.gauss(20.0, 10.0))
-RNN_LAYERS = int(random.gauss(4.0, 2.0))
-LEARNING_RATE = random.gauss(0.005, 0.001)
+LSTM_SIZE = max(2, int(random.gauss(14.0, 10.0)))
+RNN_LAYERS = max(1, int(random.gauss(4.0, 3.0)))
+LEARNING_RATE = random.gauss(0.006, 0.001)
 
 # binary classifier hyperparameters
 BIN_CLASS_LAYERS = random.randint(1, 2)
-BIN_CLASS_HIDDEN_SIZE = int(random.gauss(100.0, 50.0))
+BIN_CLASS_HIDDEN_SIZE = max(2, int(random.gauss(100.0, 50.0)))
 
 file = open("log.txt", "a")
 file.write("DROPOUT_KEEP_PROB     : {0}".format(DROPOUT_KEEP_PROB) + "\n")
@@ -62,11 +62,10 @@ def preprocess(rawstring):
         'does', 'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if', 'or',
         'because', 'as', 'until', 'while', 'of', 'at', 'by', 'for', 'with',
         'about', 'against', 'between', 'into', 'through', 'during', 'before',
-        'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in', 'out',
-        'on', 'off', 'over', 'under', 'again', 'further', 'then', 'once',
+        'after', 'to', 'from', 'up', 'down', 'again', 'further', 'then', 'once',
         'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any', 'both',
-        'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor',
-        'only', 'own', 'same', 'so', 'than', 'too', 'can', 'will'}
+        'each', 'few', 'more', 'most', 'other', 'some', 'such', 'so', 'than', 
+        'too', 'can'}
     nobr = re.sub(r'<br>', ' ', rawstring)
     no_punct = ''.join(c for c in nobr if c not in string.punctuation)
     lower = no_punct.lower()
