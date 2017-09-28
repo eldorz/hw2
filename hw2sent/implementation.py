@@ -16,20 +16,20 @@ GLOVE_MAX_VOCAB = 10000  # 400000 words in glove datasete
 NUM_REVIEWS = 25000
 WORDS_PER_REVIEW = 40
 
-'''
+
 # global hyperparameters
-DROPOUT_KEEP_PROB = 1.0
+DROPOUT_KEEP_PROB = 0.5
 
 # RNN hyperparameters
-LSTM_SIZE = 16
-RNN_LAYERS = 1
+LSTM_SIZE = 32
+RNN_LAYERS = 3
 LEARNING_RATE = 0.005
 
 # binary classifier hyperparameters
 BIN_CLASS_LAYERS = 1
 BIN_CLASS_HIDDEN_SIZE = 32
-'''
 
+'''
 # global hyperparameters
 DROPOUT_KEEP_PROB = random.uniform(0.5,1.0)
 
@@ -41,7 +41,7 @@ LEARNING_RATE = random.uniform(0.001, 0.01)
 # binary classifier hyperparameters
 BIN_CLASS_LAYERS = random.randint(1, 2)
 BIN_CLASS_HIDDEN_SIZE = random.randint(1, 256)
-
+'''
 file = open("log.txt", "a")
 file.write("DROPOUT_KEEP_PROB     : {0}".format(DROPOUT_KEEP_PROB) + "\n")
 file.write("LSTM_SIZE             : {0}".format(LSTM_SIZE) + "\n")
@@ -185,7 +185,10 @@ def lstm_cell():
     cell = tf.nn.rnn_cell.BasicLSTMCell(LSTM_SIZE, forget_bias = 0.0, 
         state_is_tuple = True)
     #cell = tf.nn.rnn_cell.GRUCell(LSTM_SIZE)
-    cell = tf.nn.rnn_cell.DropoutWrapper(cell, DROPOUT_KEEP_PROB)
+    cell = tf.nn.rnn_cell.DropoutWrapper(cell, 
+        input_keep_prob = DROPOUT_KEEP_PROB,
+        output_keep_prob = 1.0,
+        state_keep_prob = 1.0)
     return cell
 
 def onelayer(input_tensor):
@@ -221,10 +224,6 @@ def define_graph(glove_embeddings_arr):
     embeddings = tf.constant(glove_embeddings_arr, name = "embeddings")
     input_embeddings = tf.nn.embedding_lookup(embeddings, input_data, 
         name = "input_embeddings")
-
-    # dropout on inputs
-    input_embeddings = tf.nn.dropout(input_embeddings, DROPOUT_KEEP_PROB, 
-        name = "input_dropout")
 
     # multilayer lstm cell
     stacked_lstm_cell = tf.nn.rnn_cell.MultiRNNCell(

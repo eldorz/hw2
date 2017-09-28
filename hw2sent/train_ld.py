@@ -16,7 +16,7 @@ import os
 import implementation as imp
 
 batch_size = imp.batch_size
-iterations = 30000
+iterations = 100000
 seq_length = 40  # Maximum length of sentence
 
 checkpoints_dir = "./checkpoints"
@@ -115,7 +115,7 @@ for i in range(iterations):
                                    global_step=i)
         print("Saved model to %s" % save_path)
 
-    if (i > 5000 and best_smooth_acc < 0.6): break
+    #if (i > 5000 and best_smooth_acc < 0.6): break
 
 # write best performance to file       
 file = open("log.txt", "a")
