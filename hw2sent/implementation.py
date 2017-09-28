@@ -12,23 +12,22 @@ import random
 
 batch_size = 50
 GLOVE_DIM = 50
-GLOVE_MAX_VOCAB = 10000  # 400000 words in glove datasete
+GLOVE_MAX_VOCAB = 40000  # 400000 words in glove datasete
 NUM_REVIEWS = 25000
 WORDS_PER_REVIEW = 40
 
-
-# global hyperparameters
 '''
-DROPOUT_KEEP_PROB = 0.7
+# global hyperparameters
+DROPOUT_KEEP_PROB = 0.69668
 
 # RNN hyperparameters
-LSTM_SIZE = 16
+LSTM_SIZE = 14
 RNN_LAYERS = 4
-LEARNING_RATE = 0.005
+LEARNING_RATE = 0.0055055
 
 # binary classifier hyperparameters
 BIN_CLASS_LAYERS = 2
-BIN_CLASS_HIDDEN_SIZE = 128
+BIN_CLASS_HIDDEN_SIZE = 94
 '''
 # global hyperparameters
 DROPOUT_KEEP_PROB = random.gauss(0.7, 0.2)
