@@ -10,20 +10,20 @@ import random
 
 # Using tensorflow 1.3.0
 
-batch_size = 50
+batch_size = 1000
 GLOVE_DIM = 50
-GLOVE_MAX_VOCAB = 40000  # 400000 words in glove datasete
+GLOVE_MAX_VOCAB = 50000  # 400000 words in glove datasete
 NUM_REVIEWS = 25000
 WORDS_PER_REVIEW = 40
 
 '''
 # global hyperparameters
-DROPOUT_KEEP_PROB = 0.69668
+DROPOUT_KEEP_PROB = 0.7
+LEARNING_RATE = 0.005
 
 # RNN hyperparameters
 LSTM_SIZE = 14
 RNN_LAYERS = 4
-LEARNING_RATE = 0.0055055
 
 # binary classifier hyperparameters
 BIN_CLASS_LAYERS = 2
@@ -31,11 +31,11 @@ BIN_CLASS_HIDDEN_SIZE = 94
 '''
 # global hyperparameters
 DROPOUT_KEEP_PROB = random.gauss(0.7, 0.2)
+LEARNING_RATE = random.gauss(0.005, 0.002)
 
 # RNN hyperparameters
-LSTM_SIZE = max(2, int(random.gauss(14.0, 10.0)))
+LSTM_SIZE = max(2, int(random.gauss(20.0, 10.0)))
 RNN_LAYERS = max(1, int(random.gauss(4.0, 3.0)))
-LEARNING_RATE = random.gauss(0.006, 0.001)
 
 # binary classifier hyperparameters
 BIN_CLASS_LAYERS = random.randint(1, 2)
