@@ -10,7 +10,7 @@ import random
 
 # Using tensorflow 1.3.0
 
-batch_size = 1000
+batch_size = 250
 GLOVE_DIM = 50
 GLOVE_MAX_VOCAB = 50000  # 400000 words in glove datasete
 NUM_REVIEWS = 25000

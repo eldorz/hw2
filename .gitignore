@@ -101,7 +101,6 @@ ENV/
 .mypy_cache/
 
 # LD ignores
-*.txt
 *.npy
 hw2sent/reviews.tar.gz
 hw2sent/checkpoints/*
@@ -109,3 +108,7 @@ hw2sent/tensorboard/*
 hw2sent/tensorflow_self_check.py
 hw2sent/send_email.ps1
 hw2sent/~$dictionary_size.xlsx
+hw2sent/reviews/*
+hw2sent/glove.6B.50d.txt
+hw2sent/words.txt
+hw2sent/log.txt
