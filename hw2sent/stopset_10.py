@@ -1,0 +1,1 @@
+stops = {'the', 'a', 'and', 'of', 'to', 'is', 'in', 'i', 'this', 'that'}
