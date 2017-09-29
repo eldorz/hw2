@@ -10,21 +10,20 @@ import random
 
 # Using tensorflow 1.3.0
 
-batch_size = 50
+batch_size = 1000
 GLOVE_DIM = 50
-GLOVE_MAX_VOCAB = 10000  # 400000 words in glove datasete
+GLOVE_MAX_VOCAB = 50000  # 400000 words in glove datasete
 NUM_REVIEWS = 25000
 WORDS_PER_REVIEW = 40
 
 
 # global hyperparameters
-'''
 DROPOUT_KEEP_PROB = 0.7
+LEARNING_RATE = 0.005
 
 # RNN hyperparameters
 LSTM_SIZE = 16
 RNN_LAYERS = 4
-LEARNING_RATE = 0.005
 
 # binary classifier hyperparameters
 BIN_CLASS_LAYERS = 2
@@ -41,6 +40,7 @@ LEARNING_RATE = random.gauss(0.006, 0.001)
 # binary classifier hyperparameters
 BIN_CLASS_LAYERS = random.randint(1, 2)
 BIN_CLASS_HIDDEN_SIZE = max(2, int(random.gauss(100.0, 50.0)))
+'''
 
 file = open("log.txt", "a")
 file.write("DROPOUT_KEEP_PROB     : {0}".format(DROPOUT_KEEP_PROB) + "\n")

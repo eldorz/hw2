@@ -12,11 +12,12 @@ import tensorflow as tf
 from random import randint
 import datetime
 import os
+import winsound
 
 import implementation as imp
 
 batch_size = imp.batch_size
-iterations = 50000
+iterations = 30000
 seq_length = 40  # Maximum length of sentence
 
 checkpoints_dir = "./checkpoints"
@@ -130,3 +131,7 @@ file.write("at iteration             : {0}".format(best_i) + "\n\n")
 file.close()
 
 sess.close()
+
+Freq = 2500
+Dur = 1000
+winsound.Beep(Freq, Dur)
