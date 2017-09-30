@@ -10,24 +10,24 @@ import random
 
 # Using tensorflow 1.3.0
 
-batch_size = 250
+batch_size = 100
 GLOVE_DIM = 50
 GLOVE_MAX_VOCAB = 50000  # 400000 words in glove datasete
 NUM_REVIEWS = 25000
 WORDS_PER_REVIEW = 40
 
-'''
 # global hyperparameters
 DROPOUT_KEEP_PROB = 0.7
 LEARNING_RATE = 0.005
 
 # RNN hyperparameters
-LSTM_SIZE = 14
+BASIC_RNN_SIZE = 16    # for bidirectional layer
+LSTM_SIZE = 16
 RNN_LAYERS = 4
 
 # binary classifier hyperparameters
-BIN_CLASS_LAYERS = 2
-BIN_CLASS_HIDDEN_SIZE = 94
+BIN_CLASS_LAYERS = 1
+BIN_CLASS_HIDDEN_SIZE = 128
 '''
 # global hyperparameters
 DROPOUT_KEEP_PROB = random.gauss(0.7, 0.2)
@@ -40,31 +40,26 @@ RNN_LAYERS = max(1, int(random.gauss(4.0, 3.0)))
 # binary classifier hyperparameters
 BIN_CLASS_LAYERS = random.randint(1, 2)
 BIN_CLASS_HIDDEN_SIZE = max(2, int(random.gauss(100.0, 50.0)))
+'''
 
 file = open("log.txt", "a")
+file.write("batch_size            : {0}".format(batch_size) + "\n")
+file.write("GLOVE_MAX_VOCAB       : {0}".format(GLOVE_MAX_VOCAB) + "\n")
 file.write("DROPOUT_KEEP_PROB     : {0}".format(DROPOUT_KEEP_PROB) + "\n")
+file.write("LEARNING_RATE         : {0}".format(LEARNING_RATE) + "\n")
+file.write("BASIC_RNN_SIZE        : {0}".format(BASIC_RNN_SIZE) + "\n")
 file.write("LSTM_SIZE             : {0}".format(LSTM_SIZE) + "\n")
 file.write("RNN_LAYERS            : {0}".format(RNN_LAYERS) + "\n")
-file.write("LEARNING_RATE         : {0}".format(LEARNING_RATE) + "\n")
 file.write("BIN_CLASS_LAYERS      : {0}".format(BIN_CLASS_LAYERS) + "\n")
 file.write("BIN_CLASS_HIDDEN_SIZE : {0}".format(BIN_CLASS_HIDDEN_SIZE) + "\n")
 file.close()
 
 def preprocess(rawstring):
     # stopwords
-    stops = {'i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you',
-        'your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his',
-        'himself', 'she', 'her', 'hers', 'herself', 'it', 'its', 'itself',
-        'they', 'them', 'their', 'theirs', 'themselves', 'what', 'which', 'who',
-        'whom', 'this', 'that', 'these', 'those', 'am', 'is', 'are', 'was',
-        'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having', 'do',
-        'does', 'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if', 'or',
-        'because', 'as', 'until', 'while', 'of', 'at', 'by', 'for', 'with',
-        'about', 'against', 'between', 'into', 'through', 'during', 'before',
-        'after', 'to', 'from', 'up', 'down', 'again', 'further', 'then', 'once',
-        'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any', 'both',
-        'each', 'few', 'more', 'most', 'other', 'some', 'such', 'so', 'than', 
-        'too', 'can'}
+    stops = {'the', 'and', 'a', 'of', 'to', 'is', 'in', 'it', 'i', 'this',
+    'that', 'br', 'was', 'as', 'for', 'with', 'but', 'on', 'you', 'are',
+    'his', 'her', 'have', 'he', 'she', 'be', 'one', 'its', 'at', 'all', 'by',
+    'an', 'they', 'from', 'who', 'so', 'just', 'or', 'about', 'has', 'if'}
     nobr = re.sub(r'<br>', ' ', rawstring)
     no_punct = ''.join(c for c in nobr if c not in string.punctuation)
     lower = no_punct.lower()
@@ -190,6 +185,13 @@ def lstm_cell(dropout_keep):
 
     return cell
 
+def simple_recurrent_cell(dropout_keep):
+    cell = tf.nn.rnn_cell.BasicRNNCell(BASIC_RNN_SIZE)
+    cell = tf.nn.rnn_cell.DropoutWrapper(cell,
+        input_keep_prob = DROPOUT_KEEP_PROB,
+        output_keep_prob = 1.0)
+    return cell
+
 def onelayer(input_tensor, dropout_keep):
     output = tf.layers.dense(input_tensor, 2, name = "bin_class_layer_1")
     return output
@@ -229,6 +231,17 @@ def define_graph(glove_embeddings_arr):
     input_embeddings = tf.nn.embedding_lookup(embeddings, input_data, 
         name = "input_embeddings")
 
+    # bidirectional layer
+    bidir_ouputs, output_states = tf.nn.bidirectional_dynamic_rnn(
+        cell_fw = simple_recurrent_cell(dropout_keep),
+        cell_bw = simple_recurrent_cell(dropout_keep),
+        inputs = input_embeddings,
+        dtype = tf.float32,
+        sequence_length = tf.fill([batch_size], WORDS_PER_REVIEW))
+    print(bidir_ouputs)
+    fused_bidir_output = tf.concat([bidir_ouputs[0], bidir_ouputs[1]], 2)
+    print(fused_bidir_output)
+
     # multilayer lstm cell
     stacked_lstm_cell = tf.nn.rnn_cell.MultiRNNCell(
         [lstm_cell(dropout_keep) for _ in range(RNN_LAYERS)], 
@@ -238,7 +251,7 @@ def define_graph(glove_embeddings_arr):
         cell = stacked_lstm_cell,
         dtype = tf.float32, 
         sequence_length = tf.fill([batch_size], WORDS_PER_REVIEW), 
-        inputs = input_embeddings)
+        inputs = fused_bidir_output)
 
     output = tf.reshape(tf.concat(outputs, 1), 
         [batch_size, LSTM_SIZE * WORDS_PER_REVIEW])

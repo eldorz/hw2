@@ -17,7 +17,7 @@ import winsound
 import implementation as imp
 
 batch_size = imp.batch_size
-iterations = 30000
+iterations = 8000
 seq_length = 40  # Maximum length of sentence
 
 checkpoints_dir = "./checkpoints"

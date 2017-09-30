@@ -22,8 +22,8 @@ count = Counter()
 for f in file_list:
     count += countInFile(f)
 
-with open("50_common.txt", "w") as f:
-    mostcom = count.most_common(50)
+with open("50_common.txt", "w", encoding = 'utf8') as f:
+    mostcom = count.most_common(500)
     for el in mostcom:
         f.write("'")
         f.write(el[0])
