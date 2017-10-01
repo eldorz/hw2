@@ -15,7 +15,7 @@ GLOVE_DIM = 50
 GLOVE_MAX_VOCAB = 50000  # 400000 words in glove datasete
 NUM_REVIEWS = 25000
 WORDS_PER_REVIEW = 40
-
+'''
 # global hyperparameters
 DROPOUT_KEEP_PROB = 0.7
 LEARNING_RATE = 0.005
@@ -34,13 +34,14 @@ DROPOUT_KEEP_PROB = random.gauss(0.7, 0.2)
 LEARNING_RATE = random.gauss(0.005, 0.002)
 
 # RNN hyperparameters
+BASIC_RNN_SIZE = 0  # not used
 LSTM_SIZE = max(2, int(random.gauss(20.0, 10.0)))
-RNN_LAYERS = max(1, int(random.gauss(4.0, 3.0)))
+RNN_LAYERS = max(1, int(random.gauss(2.0, 2.0)))
 
 # binary classifier hyperparameters
 BIN_CLASS_LAYERS = random.randint(1, 2)
 BIN_CLASS_HIDDEN_SIZE = max(2, int(random.gauss(100.0, 50.0)))
-'''
+
 
 file = open("log.txt", "a")
 file.write("batch_size            : {0}".format(batch_size) + "\n")
