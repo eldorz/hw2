@@ -21,7 +21,7 @@ DROPOUT_KEEP_PROB = 0.7
 LEARNING_RATE = 0.005
 
 # RNN hyperparameters
-BASIC_RNN_SIZE = 16    # for bidirectional layer
+BASIC_RNN_SIZE = 32  
 LSTM_SIZE = 16
 RNN_LAYERS = 4
 
@@ -233,8 +233,8 @@ def define_graph(glove_embeddings_arr):
 
     # bidirectional layer
     bidir_ouputs, output_states = tf.nn.bidirectional_dynamic_rnn(
-        cell_fw = simple_recurrent_cell(dropout_keep),
-        cell_bw = simple_recurrent_cell(dropout_keep),
+        cell_fw = lstm_cell(dropout_keep),
+        cell_bw = lstm_cell(dropout_keep),
         inputs = input_embeddings,
         dtype = tf.float32,
         sequence_length = tf.fill([batch_size], WORDS_PER_REVIEW))
