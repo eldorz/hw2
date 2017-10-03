@@ -17,8 +17,9 @@ NUM_REVIEWS = 25000
 WORDS_PER_REVIEW = 40
 
 # global hyperparameters
-DROPOUT_KEEP_PROB = 0.6
+DROPOUT_KEEP_PROB = 0.8
 LEARNING_RATE = 0.005
+L2_BETA = 0.0001
 
 # RNN hyperparameters
 BASIC_RNN_SIZE = 0  # not used
@@ -48,6 +49,7 @@ file.write("batch_size            : {0}".format(batch_size) + "\n")
 file.write("GLOVE_MAX_VOCAB       : {0}".format(GLOVE_MAX_VOCAB) + "\n")
 file.write("DROPOUT_KEEP_PROB     : {0}".format(DROPOUT_KEEP_PROB) + "\n")
 file.write("LEARNING_RATE         : {0}".format(LEARNING_RATE) + "\n")
+file.write("L2_BETA               : {0}".format(L2_BETA) + "\n")
 file.write("BASIC_RNN_SIZE        : {0}".format(BASIC_RNN_SIZE) + "\n")
 file.write("LSTM_SIZE             : {0}".format(LSTM_SIZE) + "\n")
 file.write("RNN_LAYERS            : {0}".format(RNN_LAYERS) + "\n")
@@ -277,6 +279,12 @@ def define_graph(glove_embeddings_arr):
     cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
         labels = labels, logits = logits, name = "softmax_cross_entropy")
     loss = tf.reduce_mean(cross_entropy, name = "loss")
+
+    # L2 regularisation
+    l2 = L2_BETA * sum(tf.nn.l2_loss(tf_var) 
+        for tf_var in tf.trainable_variables() if not ("Bias" in tf_var.name))
+    loss += l2
+
 
     # optimiser
     optimizer = tf.train.AdamOptimizer(LEARNING_RATE).minimize(loss)
