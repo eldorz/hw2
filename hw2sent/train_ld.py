@@ -17,7 +17,7 @@ import winsound
 import implementation as imp
 
 batch_size = imp.batch_size
-iterations = 8000
+iterations = 100000
 seq_length = 40  # Maximum length of sentence
 
 checkpoints_dir = "./checkpoints"
@@ -115,10 +115,10 @@ for i in range(iterations):
         print("best smoothed accuracy", best_smooth_acc)
 
     if (i % 10000 == 0 and i != 0):
-        if not os.path.exists(logdir):
-            os.makedirs(logdir)
-        save_path = all_saver.save(sess, logdir +
-                                   "/model.ckpt",
+        if not os.path.exists(checkpoints_dir):
+            os.makedirs(checkpoints_dir)
+        save_path = all_saver.save(sess, checkpoints_dir +
+                                   "/trained_model.ckpt",
                                    global_step=i)
         print("Saved model to %s" % save_path)
 
@@ -132,6 +132,6 @@ file.close()
 
 sess.close()
 
-Freq = 2500
-Dur = 1000
-winsound.Beep(Freq, Dur)
+#Freq = 1000
+#Dur = 500
+#winsound.Beep(Freq, Dur)
