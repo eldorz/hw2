@@ -10,21 +10,21 @@ import random
 
 # Using tensorflow 1.3.0
 
-batch_size = 50
+batch_size = 30
 GLOVE_DIM = 50
 GLOVE_MAX_VOCAB = 50000  # 400000 words in glove datasete
 NUM_REVIEWS = 25000
 WORDS_PER_REVIEW = 40
 
 # global hyperparameters
-DROPOUT_KEEP_PROB = 0.8
+DROPOUT_KEEP_PROB = 0.9
 LEARNING_RATE = 0.005
-L2_BETA = 0.0001
+L2_BETA = 0.00005
 
 # RNN hyperparameters
 BASIC_RNN_SIZE = 0  # not used
-LSTM_SIZE = 192
-RNN_LAYERS = 7
+LSTM_SIZE = 128
+RNN_LAYERS = 3
 
 # binary classifier hyperparameters
 BIN_CLASS_LAYERS = 1
@@ -287,6 +287,7 @@ def define_graph(glove_embeddings_arr):
 
 
     # optimiser
+    #optimizer = tf.train.GradientDescentOptimizer(LEARNING_RATE).minimize(loss)
     optimizer = tf.train.AdamOptimizer(LEARNING_RATE).minimize(loss)
 
     return input_data, labels, optimizer, accuracy, loss, dropout_on, dropout_off
