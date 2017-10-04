@@ -135,12 +135,6 @@ def load_data(glove_dict):
         
     np.save("data", data)
 
-    # debug
-    file = open("words.txt", "w")
-    for w in my_word_list:
-        file.write(w + " ")
-    file.close()
-
     return data
 
 
@@ -178,19 +172,18 @@ def load_glove_embeddings():
     return embeddings, word_index_dict
 
 def lstm_cell(dropout_keep):
-    cell = tf.nn.rnn_cell.BasicLSTMCell(LSTM_SIZE, forget_bias = 0.0, 
+    cell = tf.contrib.rnn.BasicLSTMCell(LSTM_SIZE, forget_bias = 0.0, 
         state_is_tuple = True)
     #cell = tf.nn.rnn_cell.GRUCell(LSTM_SIZE)
-    cell = tf.nn.rnn_cell.DropoutWrapper(cell, 
+    cell = tf.contrib.rnn.DropoutWrapper(cell, 
         input_keep_prob = DROPOUT_KEEP_PROB,
-        output_keep_prob = 1.0,
-        state_keep_prob = 1.0)
+        output_keep_prob = 1.0)
 
     return cell
 
 def simple_recurrent_cell(dropout_keep):
-    cell = tf.nn.rnn_cell.BasicRNNCell(BASIC_RNN_SIZE)
-    cell = tf.nn.rnn_cell.DropoutWrapper(cell,
+    cell = tf.contrib.rnn.BasicRNNCell(BASIC_RNN_SIZE)
+    cell = tf.contrib.rnn.DropoutWrapper(cell,
         input_keep_prob = DROPOUT_KEEP_PROB,
         output_keep_prob = 1.0)
     return cell
@@ -243,9 +236,8 @@ def define_graph(glove_embeddings_arr):
         sequence_length = tf.fill([batch_size], WORDS_PER_REVIEW))
     fused_bidir_output = tf.concat([bidir_ouputs[0], bidir_ouputs[1]], 2)
     
-
     # multilayer lstm cell
-    stacked_lstm_cell = tf.nn.rnn_cell.MultiRNNCell(
+    stacked_lstm_cell = tf.contrib.rnn.MultiRNNCell(
         [lstm_cell(dropout_keep) for _ in range(RNN_LAYERS)], 
         state_is_tuple = True)
 
