@@ -17,9 +17,9 @@ NUM_REVIEWS = 25000
 WORDS_PER_REVIEW = 40
 
 # global hyperparameters
-DROPOUT_KEEP_PROB = 0.9
+DROPOUT_KEEP_PROB = 0.8
 LEARNING_RATE = 0.005
-L2_BETA = 0.00005
+L2_BETA = 0.0001
 
 # RNN hyperparameters
 BASIC_RNN_SIZE = 0  # not used
