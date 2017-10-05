@@ -16,7 +16,7 @@ import os
 import implementation as imp
 
 batch_size = imp.batch_size
-iterations = 100000
+iterations = 30000
 seq_length = 40  # Maximum length of sentence
 
 checkpoints_dir = "./checkpoints"
@@ -37,8 +37,7 @@ def getTrainBatch():
 # Call implementation
 glove_array, glove_dict = imp.load_glove_embeddings()
 training_data = imp.load_data(glove_dict)
-input_data, labels, dropout_keep_prob, optimizer, accuracy, loss = \
-    imp.define_graph(glove_array)
+input_data, labels, optimizer, accuracy, loss = imp.define_graph(glove_array)
 
 # tensorboard
 train_accuracy_op = tf.summary.scalar("training_accuracy", accuracy)

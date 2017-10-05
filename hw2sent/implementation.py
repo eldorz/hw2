@@ -221,7 +221,7 @@ def define_graph(glove_embeddings_arr):
     tensors"""
 
     dropout_keep = tf.get_variable("dropout_keep", dtype = tf.float32,
-        initializer = tf.constant(1.0))
+        initializer = tf.constant(DROPOUT_KEEP_PROB))
     dropout_off = dropout_keep.assign(1.0)
     dropout_on = dropout_keep.assign(DROPOUT_KEEP_PROB)
 
@@ -290,7 +290,7 @@ def define_graph(glove_embeddings_arr):
     #optimizer = tf.train.GradientDescentOptimizer(LEARNING_RATE).minimize(loss)
     optimizer = tf.train.AdamOptimizer(LEARNING_RATE).minimize(loss)
 
-    return input_data, labels, optimizer, accuracy, loss, dropout_on, dropout_off
+    # return input_data, labels, optimizer, accuracy, loss, dropout_on, dropout_off
     
     # switch to this for submission
-    # return input_data, labels, optimizer, accuracy, loss
+    return input_data, labels, dropout_keep, optimizer, accuracy, loss
