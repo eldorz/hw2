@@ -261,9 +261,8 @@ def define_graph(glove_embeddings_arr):
         logits = twolayer(output, dropout_keep)
     
     # stats
-    preds = tf.argmax(logits, 1, output_type = tf.int32, name = "predictions")
-    label_argmax = tf.argmax(labels, 1, output_type = tf.int32, 
-        name = "label_argmax")
+    preds = tf.argmax(logits, 1, name = "predictions")
+    label_argmax = tf.argmax(labels, 1, name = "label_argmax")
     correct = tf.equal(label_argmax, preds, name = "correct")
     accuracy = tf.reduce_mean(tf.cast(correct, tf.float32), name = "accuracy")
     
@@ -282,7 +281,7 @@ def define_graph(glove_embeddings_arr):
     #optimizer = tf.train.GradientDescentOptimizer(LEARNING_RATE).minimize(loss)
     optimizer = tf.train.AdamOptimizer(LEARNING_RATE).minimize(loss)
 
-    return input_data, labels, optimizer, accuracy, loss, dropout_on, dropout_off
+    # return input_data, labels, optimizer, accuracy, loss, dropout_on, dropout_off
     
     # switch to this for submission
-    # return input_data, labels, optimizer, accuracy, loss
+    return input_data, labels, optimizer, accuracy, loss
