@@ -278,8 +278,8 @@ def define_graph(glove_embeddings_arr):
 
 
     # optimiser
-    #optimizer = tf.train.GradientDescentOptimizer(LEARNING_RATE).minimize(loss)
-    optimizer = tf.train.AdamOptimizer(LEARNING_RATE).minimize(loss)
+    adam = tf.train.AdamOptimizer(LEARNING_RATE, epsilon = 0.001)
+    optimizer = adam.minimize(loss)
 
     # return input_data, labels, optimizer, accuracy, loss, dropout_on, dropout_off
     
