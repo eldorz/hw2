@@ -18,8 +18,8 @@ WORDS_PER_REVIEW = 40
 
 # global hyperparameters
 DROPOUT_KEEP_PROB = 0.8
-LEARNING_RATE = 0.005
-L2_BETA = 0.0001
+LEARNING_RATE = 0.0005  # best yet 0.005
+L2_BETA = 0.0002
 
 # RNN hyperparameters
 BASIC_RNN_SIZE = 0  # not used
@@ -281,8 +281,8 @@ def define_graph(glove_embeddings_arr):
     adam = tf.train.AdamOptimizer(LEARNING_RATE, epsilon = 0.001)
     optimizer = adam.minimize(loss)
 
-    # return input_data, labels, optimizer, accuracy, loss, dropout_on, dropout_off
+    return input_data, labels, optimizer, accuracy, loss, dropout_on, dropout_off
     
     # switch to this for submission
-    return input_data, labels, dropout_keep, optimizer, accuracy, loss
+    #return input_data, labels, dropout_keep, optimizer, accuracy, loss
 
