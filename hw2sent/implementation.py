@@ -7,6 +7,7 @@ import re
 import string
 import math
 import random
+import inspect
 
 # Using tensorflow 1.3.0
 
@@ -24,7 +25,7 @@ ADAM_EPSILON = 0.001
 
 # RNN hyperparameters
 BASIC_RNN_SIZE = 0  # not used
-LSTM_SIZE = 16
+LSTM_SIZE = 32
 RNN_LAYERS = 1
 
 # binary classifier hyperparameters
@@ -282,8 +283,12 @@ def define_graph(glove_embeddings_arr):
     adam = tf.train.AdamOptimizer(LEARNING_RATE, epsilon = ADAM_EPSILON)
     optimizer = adam.minimize(loss)
 
-    # return input_data, labels, optimizer, accuracy, loss, dropout_on, dropout_off
+    # modify returned values if called by my altered train.py
+    frm = inspect.stack()[1]
+    mod = inspect.getmodule(frm[0])
+    if mod.__file__ == "train_ld.py":
+        return input_data, labels, optimizer, accuracy, loss, dropout_on, dropout_off
     
-    # switch to this for submission
     return input_data, labels, dropout_keep, optimizer, accuracy, loss
+
 
