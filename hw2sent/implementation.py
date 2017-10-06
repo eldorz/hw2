@@ -20,11 +20,12 @@ WORDS_PER_REVIEW = 40
 DROPOUT_KEEP_PROB = 0.8
 LEARNING_RATE = 0.005
 L2_BETA = 0.0001
+ADAM_EPSILON = 0.001
 
 # RNN hyperparameters
 BASIC_RNN_SIZE = 0  # not used
-LSTM_SIZE = 128
-RNN_LAYERS = 3
+LSTM_SIZE = 16
+RNN_LAYERS = 1
 
 # binary classifier hyperparameters
 BIN_CLASS_LAYERS = 1
@@ -278,8 +279,8 @@ def define_graph(glove_embeddings_arr):
 
 
     # optimiser
-    #optimizer = tf.train.GradientDescentOptimizer(LEARNING_RATE).minimize(loss)
-    optimizer = tf.train.AdamOptimizer(LEARNING_RATE).minimize(loss)
+    adam = tf.train.AdamOptimizer(LEARNING_RATE, epsilon = ADAM_EPSILON)
+    optimizer = adam.minimize(loss)
 
     # return input_data, labels, optimizer, accuracy, loss, dropout_on, dropout_off
     

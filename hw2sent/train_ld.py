@@ -122,6 +122,10 @@ for i in range(iterations):
                                    global_step=i)
         print("Saved model to %s" % save_path)
 
+        file = open("log.txt", "a")
+        file.write("smoothed accuracy at {0} is {1}".format(i, smoothed_acc) + "\n")
+        file.close()
+
     #if (i > 5000 and best_smooth_acc < 0.6): break
 
 # write best performance to file       
