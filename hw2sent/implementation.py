@@ -7,6 +7,7 @@ import re
 import string
 import math
 import random
+import inspect
 
 # Using tensorflow 1.3.0
 
@@ -18,8 +19,9 @@ WORDS_PER_REVIEW = 40
 
 # global hyperparameters
 DROPOUT_KEEP_PROB = 0.8
-LEARNING_RATE = 0.0005  # best yet 0.005
+LEARNING_RATE = 0.0005
 L2_BETA = 0.0002
+ADAM_EPSILON = 0.001
 
 # RNN hyperparameters
 BASIC_RNN_SIZE = 0  # not used
@@ -278,11 +280,16 @@ def define_graph(glove_embeddings_arr):
 
 
     # optimiser
-    adam = tf.train.AdamOptimizer(LEARNING_RATE, epsilon = 0.001)
+    adam = tf.train.AdamOptimizer(LEARNING_RATE, epsilon = ADAM_EPSILON)
     optimizer = adam.minimize(loss)
 
-    return input_data, labels, optimizer, accuracy, loss, dropout_on, dropout_off
+    # modify returned values if called by my altered train.py
+    frm = inspect.stack()[1]
+    mod = inspect.getmodule(frm[0])
+    if mod.__file__ == "train_ld.py":
+        return input_data, labels, optimizer, accuracy, loss, dropout_on, dropout_off
     
-    # switch to this for submission
-    #return input_data, labels, dropout_keep, optimizer, accuracy, loss
+    return input_data, labels, dropout_keep, optimizer, accuracy, loss
+
+
 
