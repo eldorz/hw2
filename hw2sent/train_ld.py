@@ -12,7 +12,6 @@ import tensorflow as tf
 from random import randint
 import datetime
 import os
-import winsound
 
 import implementation as imp
 
@@ -136,6 +135,3 @@ file.close()
 
 sess.close()
 
-#Freq = 1000
-#Dur = 500
-#winsound.Beep(Freq, Dur)

@@ -9,7 +9,7 @@ import math
 import random
 import inspect
 
-# Using tensorflow 1.3.0
+# Trained on tensorflow 1.0.1
 
 batch_size = 30
 GLOVE_DIM = 50
@@ -26,38 +26,11 @@ ADAM_EPSILON = 0.001
 # RNN hyperparameters
 BASIC_RNN_SIZE = 0  # not used
 LSTM_SIZE = 128
-RNN_LAYERS = 3
+RNN_LAYERS = 1
 
 # binary classifier hyperparameters
 BIN_CLASS_LAYERS = 1
 BIN_CLASS_HIDDEN_SIZE = 128
-'''
-# global hyperparameters
-DROPOUT_KEEP_PROB = random.gauss(0.7, 0.2)
-LEARNING_RATE = random.gauss(0.005, 0.002)
-
-# RNN hyperparameters
-BASIC_RNN_SIZE = 0  # not used
-LSTM_SIZE = max(2, int(random.gauss(20.0, 10.0)))
-RNN_LAYERS = max(1, int(random.gauss(3.0, 1.0)))
-
-# binary classifier hyperparameters
-BIN_CLASS_LAYERS = random.randint(1, 2)
-BIN_CLASS_HIDDEN_SIZE = max(2, int(random.gauss(100.0, 50.0)))
-'''
-
-file = open("log.txt", "a")
-file.write("batch_size            : {0}".format(batch_size) + "\n")
-file.write("GLOVE_MAX_VOCAB       : {0}".format(GLOVE_MAX_VOCAB) + "\n")
-file.write("DROPOUT_KEEP_PROB     : {0}".format(DROPOUT_KEEP_PROB) + "\n")
-file.write("LEARNING_RATE         : {0}".format(LEARNING_RATE) + "\n")
-file.write("L2_BETA               : {0}".format(L2_BETA) + "\n")
-file.write("BASIC_RNN_SIZE        : {0}".format(BASIC_RNN_SIZE) + "\n")
-file.write("LSTM_SIZE             : {0}".format(LSTM_SIZE) + "\n")
-file.write("RNN_LAYERS            : {0}".format(RNN_LAYERS) + "\n")
-file.write("BIN_CLASS_LAYERS      : {0}".format(BIN_CLASS_LAYERS) + "\n")
-file.write("BIN_CLASS_HIDDEN_SIZE : {0}".format(BIN_CLASS_HIDDEN_SIZE) + "\n")
-file.close()
 
 def preprocess(rawstring):
     # stopwords
@@ -176,7 +149,6 @@ def load_glove_embeddings():
 def lstm_cell(dropout_keep):
     cell = tf.contrib.rnn.BasicLSTMCell(LSTM_SIZE, forget_bias = 0.0, 
         state_is_tuple = True)
-    #cell = tf.nn.rnn_cell.GRUCell(LSTM_SIZE)
     cell = tf.contrib.rnn.DropoutWrapper(cell, 
         input_keep_prob = DROPOUT_KEEP_PROB,
         output_keep_prob = 1.0)
@@ -277,7 +249,6 @@ def define_graph(glove_embeddings_arr):
     l2 = L2_BETA * sum(tf.nn.l2_loss(tf_var) 
         for tf_var in tf.trainable_variables() if not ("Bias" in tf_var.name))
     loss += l2
-
 
     # optimiser
     adam = tf.train.AdamOptimizer(LEARNING_RATE, epsilon = ADAM_EPSILON)
