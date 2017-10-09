@@ -9,7 +9,7 @@ import math
 import random
 import inspect
 
-# Using tensorflow 1.3.0
+# Using tensorflow 1.2.1
 
 batch_size = 30
 GLOVE_DIM = 50
@@ -26,7 +26,7 @@ ADAM_EPSILON = 0.001
 # RNN hyperparameters
 BASIC_RNN_SIZE = 0  # not used
 LSTM_SIZE = 128
-RNN_LAYERS = 3
+RNN_LAYERS = 1
 
 # binary classifier hyperparameters
 BIN_CLASS_LAYERS = 1
@@ -249,8 +249,11 @@ def define_graph(glove_embeddings_arr):
         sequence_length = tf.fill([batch_size], WORDS_PER_REVIEW), 
         inputs = fused_bidir_output)
 
-    output = tf.reshape(tf.concat(outputs, 1), 
-        [batch_size, LSTM_SIZE * WORDS_PER_REVIEW])
+    # try just the last output
+    # output = tf.reshape(tf.concat(outputs, 1), 
+        # [batch_size, LSTM_SIZE * WORDS_PER_REVIEW])
+    outputlist = tf.unstack(outputs, axis = 1)
+    output = outputlist[WORDS_PER_REVIEW - 1]
 
     # rnn to layer 1 dropout
     output = tf.nn.dropout(output, dropout_keep, 

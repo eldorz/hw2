@@ -112,6 +112,13 @@ for i in range(iterations):
         if smoothed_acc > best_smooth_acc:
             best_smooth_acc = smoothed_acc
             best_i = i
+            if best_smooth_acc > 0.75:
+                if not os.path.exists(checkpoints_dir):
+                    os.makedirs(checkpoints_dir)
+                    save_path = all_saver.save(sess, checkpoints_dir +
+                                    "/trained_model.ckpt",
+                                    global_step=i)
+                    print("Saved model to %s" % save_path)
         print("best smoothed accuracy", best_smooth_acc)
 
     if (i % 10000 == 0 and i != 0):
