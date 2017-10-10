@@ -55,7 +55,7 @@ logdir = "tensorboard/" + datetime.datetime.now().strftime(
     "%Y%m%d-%H%M%S") + "/"
 writer = tf.summary.FileWriter(logdir, sess.graph)
 
-for i in range(iterations):
+for i in range(iterations + 1):
     batch_data, batch_labels = getTrainBatch()
     sess.run(optimizer, {input_data: batch_data, labels: batch_labels})
     if (i % 50 == 0):

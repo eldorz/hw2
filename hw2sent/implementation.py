@@ -18,9 +18,9 @@ NUM_REVIEWS = 25000
 WORDS_PER_REVIEW = 40
 
 # global hyperparameters
-DROPOUT_KEEP_PROB = 0.8
+DROPOUT_KEEP_PROB = 0.65
 LEARNING_RATE = 0.0005
-L2_BETA = 0.0002
+L2_BETA = 0.0006
 ADAM_EPSILON = 0.001
 
 # RNN hyperparameters
@@ -174,8 +174,8 @@ def load_glove_embeddings():
     return embeddings, word_index_dict
 
 def lstm_cell(dropout_keep):
-    cell = tf.contrib.rnn.BasicLSTMCell(LSTM_SIZE, forget_bias = 0.0, 
-        state_is_tuple = True)
+    cell = tf.contrib.rnn.LSTMCell(LSTM_SIZE, forget_bias = 0.0, 
+        state_is_tuple = True, activation = tf.nn.relu, use_peepholes = True)
     #cell = tf.nn.rnn_cell.GRUCell(LSTM_SIZE)
     cell = tf.contrib.rnn.DropoutWrapper(cell, 
         input_keep_prob = DROPOUT_KEEP_PROB,
@@ -286,7 +286,7 @@ def define_graph(glove_embeddings_arr):
     # modify returned values if called by my altered train.py
     frm = inspect.stack()[1]
     mod = inspect.getmodule(frm[0])
-    if mod.__file__ == "train_ld.py":
+    if mod.__file__ == "train_ld.py" or mod.__file__ == "test_ld.py":
         return input_data, labels, optimizer, accuracy, loss, dropout_on, dropout_off
     
     return input_data, labels, dropout_keep, optimizer, accuracy, loss

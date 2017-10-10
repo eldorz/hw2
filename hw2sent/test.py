@@ -6,7 +6,7 @@ from random import randint
 checkpoints_dir = "./checkpoints"
 batch_size = 30
 seq_length = 40
-num_batches = 5000
+num_batches = 1000
 
 def getValidBatch():
     labels = []
