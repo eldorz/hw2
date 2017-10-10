@@ -58,7 +58,9 @@ input_data, labels, optimizer, accuracy, loss, dropout_on, dropout_off = \
 train_accuracy_op = tf.summary.scalar("training_accuracy", accuracy)
 test_accuracy_op = tf.summary.scalar("test_accuracy", accuracy)
 loss_op = tf.summary.scalar("loss", loss)
-summary_op = tf.summary.merge([train_accuracy_op, loss_op])
+histograms = [tf.summary.histogram(var.op.name, var) for 
+    var in tf.trainable_variables()]
+summary_op = tf.summary.merge([train_accuracy_op, loss_op, histograms])
 
 # saver
 all_saver = tf.train.Saver()

@@ -8,6 +8,7 @@ import string
 import math
 import random
 import inspect
+import time
 
 # Using tensorflow 1.2.1
 
@@ -27,7 +28,7 @@ WORDS_PER_REVIEW = 40
 # global hyperparameters
 batch_size = 30
 GLOVE_MAX_VOCAB = 50000  # 400000 words in glove datasete
-DROPOUT_KEEP_PROB = 0.9
+DROPOUT_KEEP_PROB = 0.8
 LEARNING_RATE = 0.0005
 L2_BETA = 0.0001
 ADAM_EPSILON = 0.001
@@ -49,6 +50,7 @@ BIN_CLASS_HIDDEN_SIZE = 128
 
 file = open("log.txt", "a")
 file.write("\n")
+file.write(time.strftime("%c") + "\n")
 file.write("global\n")
 file.write("  batch_size            : {0}".format(batch_size) + "\n")
 file.write("  GLOVE_MAX_VOCAB       : {0}".format(GLOVE_MAX_VOCAB) + "\n")
@@ -183,10 +185,9 @@ def load_glove_embeddings():
 def lstm_cell(dropout_keep):
     cell = tf.contrib.rnn.BasicLSTMCell(LSTM_SIZE, forget_bias = 0.0, 
         state_is_tuple = True)
-    #cell = tf.nn.rnn_cell.GRUCell(LSTM_SIZE)
-    #cell = tf.contrib.rnn.DropoutWrapper(cell, 
-     #   input_keep_prob = DROPOUT_KEEP_PROB,
-     #   output_keep_prob = 1.0)
+    cell = tf.contrib.rnn.DropoutWrapper(cell, 
+       input_keep_prob = DROPOUT_KEEP_PROB,
+       output_keep_prob = 1.0)
 
     return cell
 
@@ -225,7 +226,8 @@ def define_graph(glove_embeddings_arr):
     labels = tf.placeholder(tf.int32, shape = (batch_size, 2), name = "labels")
 
     # substitute embeddings for word indices
-    embeddings = tf.constant(glove_embeddings_arr, name = "embeddings")
+    #embeddings = tf.constant(glove_embeddings_arr, name = "embeddings")
+    embeddings = tf.Variable(glove_embeddings_arr, name = "embeddings")
     input_embeddings = tf.nn.embedding_lookup(embeddings, input_data, 
         name = "input_embeddings")
 
@@ -270,11 +272,17 @@ def define_graph(glove_embeddings_arr):
         sequence_length = tf.fill([batch_size], WORDS_PER_REVIEW), 
         inputs = input_embeddings)
 
-    # try just the last output
-    # output = tf.reshape(tf.concat(outputs, 1), 
-        # [batch_size, LSTM_SIZE * WORDS_PER_REVIEW])
-    outputlist = tf.unstack(outputs, axis = 1)
-    rnn_out = outputlist[WORDS_PER_REVIEW - 1]
+    # mean pool the outputs
+    rnn_out = tf.reduce_mean(outputs, 1)
+
+    # concatenate outputs
+        # output = tf.reshape(tf.concat(outputs, 1), 
+            # [batch_size, LSTM_SIZE * WORDS_PER_REVIEW])
+
+    # take only the last output
+        #outputlist = tf.unstack(outputs, axis = 1)
+        #rnn_out = outputlist[WORDS_PER_REVIEW - 1]
+
 
     # concatenate rnn and convolutional outputs
     bin_class_input = tf.concat([max_pool_out, rnn_out], 1)
