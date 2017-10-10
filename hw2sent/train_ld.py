@@ -106,7 +106,6 @@ for i in range(iterations):
         if test_acc > best_test_acc:
             best_test_acc = test_acc
         print("test acc", test_acc)
-        print("best test acc", best_test_acc, "at timestep", best_i)
         smoothed_acc = alpha * smoothed_acc + (1 - alpha) * test_acc
         print("smoothed accuracy", smoothed_acc)
         if smoothed_acc > best_smooth_acc:
