@@ -110,6 +110,7 @@ for i in range(iterations):
         print("test acc", test_acc)
         smoothed_acc = alpha * smoothed_acc + (1 - alpha) * test_acc
         print("smoothed accuracy", smoothed_acc)
+        
         if smoothed_acc > best_smooth_acc:
             best_smooth_acc = smoothed_acc
             best_i = i

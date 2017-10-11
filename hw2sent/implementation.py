@@ -192,14 +192,16 @@ def lstm_cell(dropout_keep):
     return cell
 
 def onelayer(input_tensor):
-    output = tf.layers.dense(input_tensor, 2, name = "bin_class_layer_1")
+    output = tf.layers.dense(input_tensor, 2, name = "bin_class_layer_1",
+        activation = None)
     return output
 
 def twolayer(input_tensor, dropout_keep):
     layer_one_output = tf.layers.dense(input_tensor, BIN_CLASS_HIDDEN_SIZE, 
         name = "bin_class_layer_1", activation = tf.nn.relu)
     layer_one_output = tf.nn.dropout(layer_one_output, dropout_keep)
-    output = tf.layers.dense(layer_one_output, 2, name = "bin_class_layer_2")
+    output = tf.layers.dense(layer_one_output, 2, name = "bin_class_layer_2",
+        activation = None)
     return output
 
 def define_graph(glove_embeddings_arr):
@@ -291,27 +293,25 @@ def define_graph(glove_embeddings_arr):
     bin_class_input = tf.nn.dropout(bin_class_input, dropout_keep, 
         name = "bin_class_input_dropout")
 
-    # binary classifier
-    if BIN_CLASS_LAYERS == 1:
-        logits = onelayer(bin_class_input)
-    else:
-        logits = twolayer(bin_class_input, dropout_keep)
-    
-    # stats
-    preds = tf.argmax(logits, 1, name = "predictions")
-    label_argmax = tf.argmax(labels, 1, name = "label_argmax")
-    correct = tf.equal(label_argmax, preds, name = "correct")
-    accuracy = tf.reduce_mean(tf.cast(correct, tf.float32), name = "accuracy")
-    
-    # cross-entropy loss
-    cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
-        labels = labels, logits = logits, name = "softmax_cross_entropy")
+    # binary classifier using logistic regression
+    logits = tf.layers.dense(bin_class_input, 1, activation = None, 
+        name = "linear_dense_layer")
+    preds = tf.sigmoid(logits, name = "predictions")
+    single_labels = tf.cast(labels[:, 1:2], tf.float32)  # don't want one-hot
+    cross_entropy = tf.nn.sigmoid_cross_entropy_with_logits(
+        labels = tf.cast(single_labels, tf.float32), logits = logits,
+        name = "cross_entropy")
     loss = tf.reduce_mean(cross_entropy, name = "loss")
 
     # L2 regularisation
     l2 = L2_BETA * sum(tf.nn.l2_loss(tf_var) 
         for tf_var in tf.trainable_variables() if not ("Bias" in tf_var.name))
     loss += l2
+
+    # stats
+    delta = tf.abs(tf.subtract(single_labels, preds), name = "delta")
+    correct = tf.less(delta, 0.5, name = "correct")
+    accuracy = tf.reduce_mean(tf.cast(correct, tf.float32), name = "accuracy")
 
     # optimiser
     adam = tf.train.AdamOptimizer(LEARNING_RATE, epsilon = ADAM_EPSILON)
