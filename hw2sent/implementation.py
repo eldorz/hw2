@@ -28,7 +28,7 @@ WORDS_PER_REVIEW = 40
 # global hyperparameters
 batch_size = 30
 GLOVE_MAX_VOCAB = 50000  # 400000 words in glove datasete
-DROPOUT_KEEP_PROB = 0.5
+DROPOUT_KEEP_PROB = 1.0
 LEARNING_RATE = 0.0005
 L2_BETA = 0.00001
 ADAM_EPSILON = 0.001
@@ -183,23 +183,24 @@ def load_glove_embeddings():
     return embeddings, word_index_dict
 
 def lstm_cell(dropout_keep):
-    cell = tf.contrib.rnn.BasicLSTMCell(LSTM_SIZE, forget_bias = 1.0, 
-        state_is_tuple = True)
+    cell = tf.contrib.rnn.LSTMCell(LSTM_SIZE, forget_bias = 0.0, 
+        state_is_tuple = True, cell_clip = 1.0)
     cell = tf.contrib.rnn.DropoutWrapper(cell, 
        input_keep_prob = DROPOUT_KEEP_PROB,
        output_keep_prob = 1.0)
-
     return cell
 
 def onelayer(input_tensor):
-    output = tf.layers.dense(input_tensor, 2, name = "bin_class_layer_1")
+    output = tf.layers.dense(input_tensor, 2, name = "bin_class_layer_1",
+        activation = None)
     return output
 
 def twolayer(input_tensor, dropout_keep):
     layer_one_output = tf.layers.dense(input_tensor, BIN_CLASS_HIDDEN_SIZE, 
         name = "bin_class_layer_1", activation = tf.nn.relu)
     layer_one_output = tf.nn.dropout(layer_one_output, dropout_keep)
-    output = tf.layers.dense(layer_one_output, 2, name = "bin_class_layer_2")
+    output = tf.layers.dense(layer_one_output, 2, name = "bin_class_layer_2",
+        activation = None)
     return output
 
 def define_graph(glove_embeddings_arr):
@@ -250,17 +251,6 @@ def define_graph(glove_embeddings_arr):
     # turn to vector for later connected layer [batch, wordvec * filters]
     max_pool_out = tf.reshape(max_pool_out, [batch_size, -1])
 
-    '''
-    # bidirectional layer
-    bidir_ouputs, output_states = tf.nn.bidirectional_dynamic_rnn(
-        cell_fw = lstm_cell(dropout_keep),
-        cell_bw = lstm_cell(dropout_keep),
-        inputs = input_embeddings,
-        dtype = tf.float32,
-        sequence_length = tf.fill([batch_size], WORDS_PER_REVIEW))
-    fused_bidir_output = tf.concat([bidir_ouputs[0], bidir_ouputs[1]], 2)
-    '''
-
     # multilayer lstm cell
     stacked_lstm_cell = tf.contrib.rnn.MultiRNNCell(
         [lstm_cell(dropout_keep) for _ in range(RNN_LAYERS)], 
@@ -275,15 +265,6 @@ def define_graph(glove_embeddings_arr):
     # mean pool the outputs
     rnn_out = tf.reduce_mean(outputs, 1)
 
-    # concatenate outputs
-        # output = tf.reshape(tf.concat(outputs, 1), 
-            # [batch_size, LSTM_SIZE * WORDS_PER_REVIEW])
-
-    # take only the last output
-        #outputlist = tf.unstack(outputs, axis = 1)
-        #rnn_out = outputlist[WORDS_PER_REVIEW - 1]
-
-
     # concatenate rnn and convolutional outputs
     bin_class_input = tf.concat([max_pool_out, rnn_out], 1)
    
@@ -291,27 +272,25 @@ def define_graph(glove_embeddings_arr):
     bin_class_input = tf.nn.dropout(bin_class_input, dropout_keep, 
         name = "bin_class_input_dropout")
 
-    # binary classifier
-    if BIN_CLASS_LAYERS == 1:
-        logits = onelayer(bin_class_input)
-    else:
-        logits = twolayer(bin_class_input, dropout_keep)
-    
-    # stats
-    preds = tf.argmax(logits, 1, name = "predictions")
-    label_argmax = tf.argmax(labels, 1, name = "label_argmax")
-    correct = tf.equal(label_argmax, preds, name = "correct")
-    accuracy = tf.reduce_mean(tf.cast(correct, tf.float32), name = "accuracy")
-    
-    # cross-entropy loss
-    cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
-        labels = labels, logits = logits, name = "softmax_cross_entropy")
+    # binary classifier using logistic regression
+    logits = tf.layers.dense(bin_class_input, 1, activation = None, 
+        name = "linear_dense_layer")
+    preds = tf.sigmoid(logits, name = "predictions")
+    single_labels = tf.cast(labels[:, 1:2], tf.float32)  # don't want one-hot
+    cross_entropy = tf.nn.sigmoid_cross_entropy_with_logits(
+        labels = tf.cast(single_labels, tf.float32), logits = logits,
+        name = "cross_entropy")
     loss = tf.reduce_mean(cross_entropy, name = "loss")
 
     # L2 regularisation
     l2 = L2_BETA * sum(tf.nn.l2_loss(tf_var) 
         for tf_var in tf.trainable_variables() if not ("Bias" in tf_var.name))
     loss += l2
+
+    # stats
+    delta = tf.abs(tf.subtract(single_labels, preds), name = "delta")
+    correct = tf.less(delta, 0.5, name = "correct")
+    accuracy = tf.reduce_mean(tf.cast(correct, tf.float32), name = "accuracy")
 
     # optimiser
     adam = tf.train.AdamOptimizer(LEARNING_RATE, epsilon = ADAM_EPSILON)
