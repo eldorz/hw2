@@ -28,23 +28,23 @@ WORDS_PER_REVIEW = 40
 # global hyperparameters
 batch_size = 30
 GLOVE_MAX_VOCAB = 50000  # 400000 words in glove datasete
-DROPOUT_KEEP_PROB = 0.8
+DROPOUT_KEEP_PROB = 0.5
 LEARNING_RATE = 0.0005
-L2_BETA = 0.0001
+L2_BETA = 0.00001
 ADAM_EPSILON = 0.001
 
 # CNN hyperparameters
-CNN_FILTERS = 1
+CNN_FILTERS = 8
 CNN_FILTERSIZE = 3
 CNN_POOL_SIZE = (WORDS_PER_REVIEW, 1)
 CNN_POOL_STRIDES = (WORDS_PER_REVIEW, 1)
 
 # RNN hyperparameters
-LSTM_SIZE = 50
-RNN_LAYERS = 1
+LSTM_SIZE = 128
+RNN_LAYERS = 3
 
 # binary classifier hyperparameters
-BIN_CLASS_LAYERS = 1
+BIN_CLASS_LAYERS = 2
 BIN_CLASS_HIDDEN_SIZE = 128
 
 
@@ -183,7 +183,7 @@ def load_glove_embeddings():
     return embeddings, word_index_dict
 
 def lstm_cell(dropout_keep):
-    cell = tf.contrib.rnn.BasicLSTMCell(LSTM_SIZE, forget_bias = 0.0, 
+    cell = tf.contrib.rnn.BasicLSTMCell(LSTM_SIZE, forget_bias = 1.0, 
         state_is_tuple = True)
     cell = tf.contrib.rnn.DropoutWrapper(cell, 
        input_keep_prob = DROPOUT_KEEP_PROB,
@@ -217,7 +217,7 @@ def define_graph(glove_embeddings_arr):
     tensors"""
 
     dropout_keep = tf.get_variable("dropout_keep", dtype = tf.float32,
-        initializer = tf.constant(DROPOUT_KEEP_PROB))
+        initializer = tf.constant(DROPOUT_KEEP_PROB), trainable = False)
     dropout_off = dropout_keep.assign(1.0)
     dropout_on = dropout_keep.assign(DROPOUT_KEEP_PROB)
 
