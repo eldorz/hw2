@@ -28,9 +28,9 @@ WORDS_PER_REVIEW = 40
 # global hyperparameters
 batch_size = 30
 GLOVE_MAX_VOCAB = 50000  # 400000 words in glove datasete
-DROPOUT_KEEP_PROB = 0.8
+DROPOUT_KEEP_PROB = 1.0
 LEARNING_RATE = 0.0005
-L2_BETA = 0.0001
+L2_BETA = 0.00001
 ADAM_EPSILON = 0.001
 
 # CNN hyperparameters
@@ -183,8 +183,8 @@ def load_glove_embeddings():
     return embeddings, word_index_dict
 
 def lstm_cell(dropout_keep):
-    cell = tf.contrib.rnn.BasicLSTMCell(LSTM_SIZE, forget_bias = 0.0, 
-        state_is_tuple = True)
+    cell = tf.contrib.rnn.LSTMCell(LSTM_SIZE, forget_bias = 0.0, 
+        state_is_tuple = True, cell_clip = 1.0)
     cell = tf.contrib.rnn.DropoutWrapper(cell, 
        input_keep_prob = DROPOUT_KEEP_PROB,
        output_keep_prob = 1.0)
