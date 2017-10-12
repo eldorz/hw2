@@ -20,7 +20,7 @@ batch_size = imp.batch_size
 iterations = 100000
 seq_length = 40  # Maximum length of sentence
 
-checkpoints_dir = "./checkpoints"
+checkpoints_dir = "./checkpoints_final"
 
 def getTrainBatch():
     labels = []
@@ -114,23 +114,18 @@ for i in range(iterations + 1):
         if smoothed_acc > best_smooth_acc:
             best_smooth_acc = smoothed_acc
             best_i = i
-            if best_smooth_acc > 0.75:
+            if best_smooth_acc > 0.78:
                 if not os.path.exists(checkpoints_dir):
                     os.makedirs(checkpoints_dir)
-                    save_path = all_saver.save(sess, checkpoints_dir +
-                                    "/trained_model.ckpt",
-                                    global_step=i)
-                    print("Saved model to %s" % save_path)
+                save_path = all_saver.save(sess, checkpoints_dir +
+                    "/trained_model.ckpt", global_step=i)
+                print("Saved model to %s" % save_path)
+                file = open("log.txt", "a")
+                file.write("{0} {1}".format(best_smooth_acc, i) + "\n")
+                file.close()
         print("best smoothed accuracy", best_smooth_acc)
 
     if (i % 10000 == 0 and i != 0):
-        if not os.path.exists(checkpoints_dir):
-            os.makedirs(checkpoints_dir)
-        save_path = all_saver.save(sess, checkpoints_dir +
-                                   "/trained_model.ckpt",
-                                   global_step=i)
-        print("Saved model to %s" % save_path)
-
         file = open("log.txt", "a")
         file.write("smoothed accuracy at {0} is {1}".format(i, smoothed_acc) + "\n")
         file.close()
