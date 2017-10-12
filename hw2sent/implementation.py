@@ -34,17 +34,17 @@ L2_BETA = 0.00001
 ADAM_EPSILON = 0.001
 
 # CNN hyperparameters
-CNN_FILTERS = 1
+CNN_FILTERS = 8
 CNN_FILTERSIZE = 3
 CNN_POOL_SIZE = (WORDS_PER_REVIEW, 1)
 CNN_POOL_STRIDES = (WORDS_PER_REVIEW, 1)
 
 # RNN hyperparameters
-LSTM_SIZE = 50
-RNN_LAYERS = 1
+LSTM_SIZE = 128
+RNN_LAYERS = 3
 
 # binary classifier hyperparameters
-BIN_CLASS_LAYERS = 1
+BIN_CLASS_LAYERS = 2
 BIN_CLASS_HIDDEN_SIZE = 128
 
 
@@ -188,7 +188,6 @@ def lstm_cell(dropout_keep):
     cell = tf.contrib.rnn.DropoutWrapper(cell, 
        input_keep_prob = DROPOUT_KEEP_PROB,
        output_keep_prob = 1.0)
-
     return cell
 
 def onelayer(input_tensor):
@@ -252,29 +251,7 @@ def define_graph(glove_embeddings_arr):
     # turn to vector for later connected layer [batch, wordvec * filters]
     max_pool_out = tf.reshape(max_pool_out, [batch_size, -1])
 
-    '''
-    # bidirectional layer
-    bidir_ouputs, output_states = tf.nn.bidirectional_dynamic_rnn(
-        cell_fw = lstm_cell(dropout_keep),
-        cell_bw = lstm_cell(dropout_keep),
-        inputs = input_embeddings,
-        dtype = tf.float32,
-        sequence_length = tf.fill([batch_size], WORDS_PER_REVIEW))
-    fused_bidir_output = tf.concat([bidir_ouputs[0], bidir_ouputs[1]], 2)
-    '''
-
-    '''
-    # multilayer lstm cell
-    stacked_lstm_cell = tf.contrib.rnn.MultiRNNCell(
-        [lstm_cell(dropout_keep) for _ in range(RNN_LAYERS)], 
-        state_is_tuple = True)
-
-    outputs, last_states = tf.nn.dynamic_rnn(
-        cell = stacked_lstm_cell,
-        dtype = tf.float32, 
-        sequence_length = tf.fill([batch_size], WORDS_PER_REVIEW), 
-        inputs = input_embeddings)
-    '''
+    # single layer of lstm
     outputs, last_states = tf.nn.dynamic_rnn(
         cell = lstm_cell(dropout_keep),
         dtype = tf.float32,
@@ -283,15 +260,6 @@ def define_graph(glove_embeddings_arr):
 
     # mean pool the outputs
     rnn_out = tf.reduce_mean(outputs, 1, name = 'rnn_out')
-
-    # concatenate outputs
-        # output = tf.reshape(tf.concat(outputs, 1), 
-            # [batch_size, LSTM_SIZE * WORDS_PER_REVIEW])
-
-    # take only the last output
-        #outputlist = tf.unstack(outputs, axis = 1)
-        #rnn_out = outputlist[WORDS_PER_REVIEW - 1]
-
 
     # concatenate rnn and convolutional outputs
     dense_in = tf.concat([max_pool_out, rnn_out], 1, name = 'dense_in')
