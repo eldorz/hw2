@@ -13,7 +13,7 @@ import inspect
 
 batch_size = 30
 GLOVE_DIM = 50
-GLOVE_MAX_VOCAB = 50000  # 400000 words in glove datasete
+GLOVE_MAX_VOCAB = 200000  # 400000 words in glove datasete
 NUM_REVIEWS = 25000
 WORDS_PER_REVIEW = 40
 
