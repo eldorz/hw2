@@ -28,7 +28,7 @@ WORDS_PER_REVIEW = 40
 # global hyperparameters
 batch_size = 30
 GLOVE_MAX_VOCAB = 50000  # 400000 words in glove datasete
-DROPOUT_KEEP_PROB = 0.5
+DROPOUT_KEEP_PROB = 0.75
 LEARNING_RATE = 0.0005
 L2_BETA = 0.00002
 ADAM_EPSILON = 0.001
@@ -244,25 +244,57 @@ def define_graph(glove_embeddings_arr):
     # turn to vector for later connected layer [batch, wordvec * filters]
     max_pool_out = tf.reshape(max_pool_out, [batch_size, -1])
 
-    # multilayer lstm cell
-    stacked_lstm_cell = tf.contrib.rnn.MultiRNNCell(
-        [lstm_cell(dropout_keep) for _ in range(RNN_LAYERS)], 
-        state_is_tuple = True)
-
+    # single layer of lstm
     outputs, last_states = tf.nn.dynamic_rnn(
-        cell = stacked_lstm_cell,
-        dtype = tf.float32, 
-        sequence_length = tf.fill([batch_size], WORDS_PER_REVIEW), 
+        cell = lstm_cell(dropout_keep),
+        dtype = tf.float32,
+        sequence_length = tf.fill([batch_size], WORDS_PER_REVIEW),
         inputs = input_embeddings)
 
     # mean pool the outputs
-    rnn_out = tf.reduce_mean(outputs, 1)
+    rnn_out = tf.reduce_mean(outputs, 1, name = 'rnn_out')
 
     # concatenate rnn and convolutional outputs
-    bin_class_input = tf.concat([max_pool_out, rnn_out], 1)
+    dense_in = tf.concat([max_pool_out, rnn_out], 1, name = 'dense_in')
+    dense_in = tf.nn.dropout(dense_in, dropout_keep)
+
+    dense1 = tf.layers.dense(dense_in, 32, activation = tf.nn.relu,
+        name = 'dense1')
+    dense1 = tf.nn.dropout(dense1, dropout_keep)
+
+    dense2 = tf.layers.dense(dense1, 32, activation = tf.nn.relu)
+    dense2 = tf.concat([dense2, rnn_out], 1)
+    dense2 = tf.nn.dropout(dense2, dropout_keep)
+
+    dense3 = tf.layers.dense(dense2, 32, activation = tf.nn.relu)
+    dense3 = tf.nn.dropout(dense3, dropout_keep)
+
+    dense4= tf.layers.dense(dense3, 32, activation = tf.nn.relu)
+    dense4 = tf.concat([dense4, dense2], 1, name = 'dense4_dense2_concat')
+    dense4 = tf.nn.dropout(dense4, dropout_keep)
+
+    dense5= tf.layers.dense(dense4, 32, activation = tf.nn.relu)
+    dense5 = tf.nn.dropout(dense5, dropout_keep)
+
+    dense6= tf.layers.dense(dense5, 32, activation = tf.nn.relu)
+    dense6 = tf.concat([dense6, dense4], 1)
+    dense6 = tf.nn.dropout(dense6, dropout_keep)
+
+    dense7= tf.layers.dense(dense6, 32, activation = tf.nn.relu)
+    dense7 = tf.nn.dropout(dense7, dropout_keep)
+
+    dense8= tf.layers.dense(dense7, 32, activation = tf.nn.relu)
+    dense8 = tf.concat([dense8, dense6], 1)
+    dense8 = tf.nn.dropout(dense8, dropout_keep)
+
+    dense9= tf.layers.dense(dense8, 32, activation = tf.nn.relu)
+    dense_out = tf.concat([dense9, dense_in], 1)
    
     # binary classifier input dropout
-    bin_class_input = tf.nn.dropout(bin_class_input, dropout_keep, 
+    #bin_class_input = tf.nn.dropout(bin_class_input, dropout_keep, 
+    #    name = "bin_class_input_dropout")
+
+    bin_class_input = tf.nn.dropout(dense_out, dropout_keep, 
         name = "bin_class_input_dropout")
 
     # binary classifier using logistic regression
