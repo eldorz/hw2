@@ -28,24 +28,20 @@ WORDS_PER_REVIEW = 40
 # global hyperparameters
 batch_size = 30
 GLOVE_MAX_VOCAB = 50000  # 400000 words in glove datasete
-DROPOUT_KEEP_PROB = 1.0
+DROPOUT_KEEP_PROB = 0.5
 LEARNING_RATE = 0.0005
-L2_BETA = 0.00001
+L2_BETA = 0.00002
 ADAM_EPSILON = 0.001
 
 # CNN hyperparameters
-CNN_FILTERS = 8
+CNN_FILTERS = 4
 CNN_FILTERSIZE = 3
 CNN_POOL_SIZE = (WORDS_PER_REVIEW, 1)
 CNN_POOL_STRIDES = (WORDS_PER_REVIEW, 1)
 
 # RNN hyperparameters
 LSTM_SIZE = 128
-RNN_LAYERS = 3
-
-# binary classifier hyperparameters
-BIN_CLASS_LAYERS = 2
-BIN_CLASS_HIDDEN_SIZE = 128
+RNN_LAYERS = 1
 
 
 file = open("log.txt", "a")
@@ -63,9 +59,6 @@ file.write("  CNN_FILTERSIZE        : {0}".format(CNN_FILTERSIZE) + "\n")
 file.write("RNN\n")
 file.write("  LSTM_SIZE             : {0}".format(LSTM_SIZE) + "\n")
 file.write("  RNN_LAYERS            : {0}".format(RNN_LAYERS) + "\n")
-file.write("classifier\n")
-file.write("  BIN_CLASS_LAYERS      : {0}".format(BIN_CLASS_LAYERS) + "\n")
-file.write("  BIN_CLASS_HIDDEN_SIZE : {0}".format(BIN_CLASS_HIDDEN_SIZE) + "\n")
 file.close()
 
 def preprocess(rawstring):
