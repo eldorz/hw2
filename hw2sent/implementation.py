@@ -8,55 +8,56 @@ import string
 import math
 import random
 import inspect
+import time
 
-# Using tensorflow 1.3.0
+# Using tensorflow 1.2.1
 
-batch_size = 30
+#        data
+#          |
+#         / \
+#       CNN  RNN
+#         \ /
+#          |
+#  fully connected classifier
+
+# constants
 GLOVE_DIM = 50
-GLOVE_MAX_VOCAB = 200000  # 400000 words in glove datasete
 NUM_REVIEWS = 25000
 WORDS_PER_REVIEW = 40
 
 # global hyperparameters
-DROPOUT_KEEP_PROB = 0.65
+batch_size = 30
+GLOVE_MAX_VOCAB = 200000  # 400000 words in glove dataset
+DROPOUT_KEEP_PROB = 0.5
 LEARNING_RATE = 0.0005
-L2_BETA = 0.0006
+L2_BETA = 0.0001
 ADAM_EPSILON = 0.001
 
-# RNN hyperparameters
-BASIC_RNN_SIZE = 0  # not used
-LSTM_SIZE = 128
-RNN_LAYERS = 3
-
-# binary classifier hyperparameters
-BIN_CLASS_LAYERS = 1
-BIN_CLASS_HIDDEN_SIZE = 128
-'''
-# global hyperparameters
-DROPOUT_KEEP_PROB = random.gauss(0.7, 0.2)
-LEARNING_RATE = random.gauss(0.005, 0.002)
+# CNN hyperparameters
+CNN_FILTERS = 1
+CNN_FILTERSIZE = 3
+CNN_POOL_SIZE = (WORDS_PER_REVIEW, 1)
+CNN_POOL_STRIDES = (WORDS_PER_REVIEW, 1)
 
 # RNN hyperparameters
-BASIC_RNN_SIZE = 0  # not used
-LSTM_SIZE = max(2, int(random.gauss(20.0, 10.0)))
-RNN_LAYERS = max(1, int(random.gauss(3.0, 1.0)))
-
-# binary classifier hyperparameters
-BIN_CLASS_LAYERS = random.randint(1, 2)
-BIN_CLASS_HIDDEN_SIZE = max(2, int(random.gauss(100.0, 50.0)))
-'''
+LSTM_SIZE = 50
+RNN_LAYERS = 1
 
 file = open("log.txt", "a")
-file.write("batch_size            : {0}".format(batch_size) + "\n")
-file.write("GLOVE_MAX_VOCAB       : {0}".format(GLOVE_MAX_VOCAB) + "\n")
-file.write("DROPOUT_KEEP_PROB     : {0}".format(DROPOUT_KEEP_PROB) + "\n")
-file.write("LEARNING_RATE         : {0}".format(LEARNING_RATE) + "\n")
-file.write("L2_BETA               : {0}".format(L2_BETA) + "\n")
-file.write("BASIC_RNN_SIZE        : {0}".format(BASIC_RNN_SIZE) + "\n")
-file.write("LSTM_SIZE             : {0}".format(LSTM_SIZE) + "\n")
-file.write("RNN_LAYERS            : {0}".format(RNN_LAYERS) + "\n")
-file.write("BIN_CLASS_LAYERS      : {0}".format(BIN_CLASS_LAYERS) + "\n")
-file.write("BIN_CLASS_HIDDEN_SIZE : {0}".format(BIN_CLASS_HIDDEN_SIZE) + "\n")
+file.write("\n")
+file.write(time.strftime("%c") + "\n")
+file.write("global\n")
+file.write("  batch_size            : {0}".format(batch_size) + "\n")
+file.write("  GLOVE_MAX_VOCAB       : {0}".format(GLOVE_MAX_VOCAB) + "\n")
+file.write("  DROPOUT_KEEP_PROB     : {0}".format(DROPOUT_KEEP_PROB) + "\n")
+file.write("  LEARNING_RATE         : {0}".format(LEARNING_RATE) + "\n")
+file.write("  L2_BETA               : {0}".format(L2_BETA) + "\n")
+file.write("CNN\n")
+file.write("  CNN_FILTERS           : {0}".format(CNN_FILTERS) + "\n")
+file.write("  CNN_FILTERSIZE        : {0}".format(CNN_FILTERSIZE) + "\n")
+file.write("RNN\n")
+file.write("  LSTM_SIZE             : {0}".format(LSTM_SIZE) + "\n")
+file.write("  RNN_LAYERS            : {0}".format(RNN_LAYERS) + "\n")
 file.close()
 
 def preprocess(rawstring):
@@ -174,32 +175,12 @@ def load_glove_embeddings():
     return embeddings, word_index_dict
 
 def lstm_cell(dropout_keep):
-    cell = tf.contrib.rnn.LSTMCell(LSTM_SIZE, forget_bias = 0.0, 
-        state_is_tuple = True, activation = tf.nn.relu, use_peepholes = True)
-    #cell = tf.nn.rnn_cell.GRUCell(LSTM_SIZE)
+    cell = tf.contrib.rnn.LSTMCell(LSTM_SIZE, forget_bias = 1.0, 
+        state_is_tuple = True, cell_clip = 1.0)
     cell = tf.contrib.rnn.DropoutWrapper(cell, 
-        input_keep_prob = DROPOUT_KEEP_PROB,
-        output_keep_prob = 1.0)
-
+       input_keep_prob = DROPOUT_KEEP_PROB,
+       output_keep_prob = 1.0)
     return cell
-
-def simple_recurrent_cell(dropout_keep):
-    cell = tf.contrib.rnn.BasicRNNCell(BASIC_RNN_SIZE)
-    cell = tf.contrib.rnn.DropoutWrapper(cell,
-        input_keep_prob = DROPOUT_KEEP_PROB,
-        output_keep_prob = 1.0)
-    return cell
-
-def onelayer(input_tensor, dropout_keep):
-    output = tf.layers.dense(input_tensor, 2, name = "bin_class_layer_1")
-    return output
-
-def twolayer(input_tensor, dropout_keep):
-    layer_one_output = tf.layers.dense(input_tensor, BIN_CLASS_HIDDEN_SIZE, 
-        name = "bin_class_layer_1", activation = tf.nn.relu)
-    layer_one_output = tf.nn.dropout(layer_one_output, dropout_keep)
-    output = tf.layers.dense(layer_one_output, 2, name = "bin_class_layer_2")
-    return output
 
 def define_graph(glove_embeddings_arr):
     """
@@ -216,7 +197,7 @@ def define_graph(glove_embeddings_arr):
     tensors"""
 
     dropout_keep = tf.get_variable("dropout_keep", dtype = tf.float32,
-        initializer = tf.constant(DROPOUT_KEEP_PROB))
+        initializer = tf.constant(DROPOUT_KEEP_PROB), trainable = False)
     dropout_off = dropout_keep.assign(1.0)
     dropout_on = dropout_keep.assign(DROPOUT_KEEP_PROB)
 
@@ -225,52 +206,61 @@ def define_graph(glove_embeddings_arr):
     labels = tf.placeholder(tf.int32, shape = (batch_size, 2), name = "labels")
 
     # substitute embeddings for word indices
-    embeddings = tf.constant(glove_embeddings_arr, name = "embeddings")
+    # embeddings are trainable
+    embeddings = tf.Variable(glove_embeddings_arr, name = "embeddings",
+        trainable = True)
     input_embeddings = tf.nn.embedding_lookup(embeddings, input_data, 
         name = "input_embeddings")
 
-    # bidirectional layer
-    bidir_ouputs, output_states = tf.nn.bidirectional_dynamic_rnn(
-        cell_fw = lstm_cell(dropout_keep),
-        cell_bw = lstm_cell(dropout_keep),
-        inputs = input_embeddings,
-        dtype = tf.float32,
-        sequence_length = tf.fill([batch_size], WORDS_PER_REVIEW))
-    fused_bidir_output = tf.concat([bidir_ouputs[0], bidir_ouputs[1]], 2)
-    
+    # convolutional layer
+    # conv in [batch, time, wordvec, 1]
+    conv_in = tf.expand_dims(input_embeddings, 3)
+    # conv out [batch, time, wordvec, filters]
+    conv_out = tf.layers.conv2d(inputs = conv_in,
+        filters = CNN_FILTERS,
+        kernel_size = [CNN_FILTERSIZE, GLOVE_DIM],
+        padding = 'same',
+        activation = tf.nn.relu, name = 'conv2d')
+
+    # max pooling [batch, 1, wordvec, filters]
+    max_pool_out = tf.layers.max_pooling2d(conv_out,
+        pool_size = CNN_POOL_SIZE, 
+        strides = CNN_POOL_STRIDES,
+        padding='valid', data_format='channels_last', name='max_pool')
+
+    # turn to vector for later connected layer [batch, wordvec * filters]
+    max_pool_out = tf.reshape(max_pool_out, [batch_size, -1])
+
     # multilayer lstm cell
     stacked_lstm_cell = tf.contrib.rnn.MultiRNNCell(
         [lstm_cell(dropout_keep) for _ in range(RNN_LAYERS)], 
         state_is_tuple = True)
 
-    outputs, last_states = tf.nn.dynamic_rnn(
+    outputs, _ = tf.nn.dynamic_rnn(
         cell = stacked_lstm_cell,
         dtype = tf.float32, 
         sequence_length = tf.fill([batch_size], WORDS_PER_REVIEW), 
-        inputs = fused_bidir_output)
+        inputs = input_embeddings)
 
-    output = tf.reshape(tf.concat(outputs, 1), 
-        [batch_size, LSTM_SIZE * WORDS_PER_REVIEW])
+    # mean pool the outputs
+    rnn_out = tf.reduce_mean(outputs, 1, name = "rnn_out")
 
-    # rnn to layer 1 dropout
-    output = tf.nn.dropout(output, dropout_keep, 
-        name = "rnn_to_layer_1_dropout")
+    # concatenate rnn and convolutional outputs
+    bin_class_input = tf.concat([max_pool_out, rnn_out], 1, 
+        name = "bin_class_input")
+   
+    # binary classifier input dropout
+    bin_class_input = tf.nn.dropout(bin_class_input, dropout_keep, 
+       name = "bin_class_input_dropout")
 
-    # binary classifier
-    if BIN_CLASS_LAYERS == 1:
-        logits = onelayer(output, dropout_keep)
-    else:
-        logits = twolayer(output, dropout_keep)
-    
-    # stats
-    preds = tf.argmax(logits, 1, name = "predictions")
-    label_argmax = tf.argmax(labels, 1, name = "label_argmax")
-    correct = tf.equal(label_argmax, preds, name = "correct")
-    accuracy = tf.reduce_mean(tf.cast(correct, tf.float32), name = "accuracy")
-    
-    # binary cross-entropy loss
-    cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
-        labels = labels, logits = logits, name = "softmax_cross_entropy")
+    # binary classifier using logistic regression
+    logits = tf.layers.dense(bin_class_input, 1, activation = None, 
+        name = "linear_dense_layer")
+    preds = tf.sigmoid(logits, name = "predictions")
+    single_labels = tf.cast(labels[:, 1:2], tf.float32)  # don't want one-hot
+    cross_entropy = tf.nn.sigmoid_cross_entropy_with_logits(
+        labels = tf.cast(single_labels, tf.float32), logits = logits,
+        name = "cross_entropy")
     loss = tf.reduce_mean(cross_entropy, name = "loss")
 
     # L2 regularisation
@@ -278,6 +268,10 @@ def define_graph(glove_embeddings_arr):
         for tf_var in tf.trainable_variables() if not ("Bias" in tf_var.name))
     loss += l2
 
+    # stats
+    delta = tf.abs(tf.subtract(single_labels, preds), name = "delta")
+    correct = tf.less(delta, 0.5, name = "correct")
+    accuracy = tf.reduce_mean(tf.cast(correct, tf.float32), name = "accuracy")
 
     # optimiser
     adam = tf.train.AdamOptimizer(LEARNING_RATE, epsilon = ADAM_EPSILON)
