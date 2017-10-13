@@ -104,6 +104,7 @@ ENV/
 *.npy
 hw2sent/reviews.tar.gz
 hw2sent/checkpoints/*
+hw2sent/checkpoints_final/*
 hw2sent/tensorboard/*
 hw2sent/tensorflow_self_check.py
 hw2sent/send_email.ps1
