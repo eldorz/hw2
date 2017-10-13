@@ -51,7 +51,6 @@ def getValidBatch():
 # Call implementation
 glove_array, glove_dict = imp.load_glove_embeddings()
 training_data = imp.load_data(glove_dict)
-glove_array[10] = 500000  # test out of bounds index
 input_data, labels, optimizer, accuracy, loss, dropout_on, dropout_off = \
     imp.define_graph(glove_array)
 

@@ -27,20 +27,20 @@ WORDS_PER_REVIEW = 40
 
 # global hyperparameters
 batch_size = 30
-GLOVE_MAX_VOCAB = 400000  # 400000 words in glove dataset
+GLOVE_MAX_VOCAB = 50000  # 400000 words in glove dataset
 DROPOUT_KEEP_PROB = 0.5
 LEARNING_RATE = 0.0005
-L2_BETA = 0.000001
+L2_BETA = 0.00002
 ADAM_EPSILON = 0.001
 
 # CNN hyperparameters
-CNN_FILTERS = 1
+CNN_FILTERS = 4
 CNN_FILTERSIZE = 3
 CNN_POOL_SIZE = (WORDS_PER_REVIEW, 1)
 CNN_POOL_STRIDES = (WORDS_PER_REVIEW, 1)
 
 # RNN hyperparameters
-LSTM_SIZE = 50
+LSTM_SIZE = 128
 RNN_LAYERS = 1
 
 file = open("log.txt", "a")
