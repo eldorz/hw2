@@ -27,10 +27,10 @@ WORDS_PER_REVIEW = 40
 
 # global hyperparameters
 batch_size = 30
-GLOVE_MAX_VOCAB = 200000  # 400000 words in glove dataset
+GLOVE_MAX_VOCAB = 400000  # 400000 words in glove dataset
 DROPOUT_KEEP_PROB = 0.5
 LEARNING_RATE = 0.0005
-L2_BETA = 0.0001
+L2_BETA = 0.000001
 ADAM_EPSILON = 0.001
 
 # CNN hyperparameters
@@ -172,6 +172,9 @@ def load_glove_embeddings():
         embeddings[n] = elements[1:]
         n += 1
 
+    # save last element for rare words indexed by dictionaries other than mine
+    embeddings[GLOVE_MAX_VOCAB - 1] = np.zeros(GLOVE_DIM)
+
     return embeddings, word_index_dict
 
 def lstm_cell(dropout_keep):
@@ -209,6 +212,8 @@ def define_graph(glove_embeddings_arr):
     # embeddings are trainable
     embeddings = tf.Variable(glove_embeddings_arr, name = "embeddings",
         trainable = True)
+    embeddings = tf.clip_by_value(embeddings, 0, GLOVE_MAX_VOCAB - 1, 
+        name = "clip_indices_to_input_data_size")
     input_embeddings = tf.nn.embedding_lookup(embeddings, input_data, 
         name = "input_embeddings")
 

@@ -51,6 +51,7 @@ def getValidBatch():
 # Call implementation
 glove_array, glove_dict = imp.load_glove_embeddings()
 training_data = imp.load_data(glove_dict)
+glove_array[10] = 500000  # test out of bounds index
 input_data, labels, optimizer, accuracy, loss, dropout_on, dropout_off = \
     imp.define_graph(glove_array)
 
@@ -77,6 +78,7 @@ best_i = 0
 alpha = 0.95
 smoothed_acc = 0.5
 best_smooth_acc = 0
+smoothed_train_acc = 0.5
 
 sess.run(dropout_on)
 
@@ -107,6 +109,8 @@ for i in range(iterations + 1):
         print("acc", accuracy_value)
         if test_acc > best_test_acc:
             best_test_acc = test_acc
+        smoothed_train_acc = alpha * smoothed_train_acc + (1 - alpha) * accuracy_value
+        print("smoothed train accuracy", smoothed_train_acc)
         print("test acc", test_acc)
         smoothed_acc = alpha * smoothed_acc + (1 - alpha) * test_acc
         print("smoothed accuracy", smoothed_acc)
@@ -114,7 +118,7 @@ for i in range(iterations + 1):
         if smoothed_acc > best_smooth_acc:
             best_smooth_acc = smoothed_acc
             best_i = i
-            if best_smooth_acc > 0.78:
+            if best_smooth_acc > 0.76:
                 if not os.path.exists(checkpoints_dir):
                     os.makedirs(checkpoints_dir)
                 save_path = all_saver.save(sess, checkpoints_dir +
@@ -123,6 +127,9 @@ for i in range(iterations + 1):
                 file = open("log.txt", "a")
                 file.write("{0} {1}".format(best_smooth_acc, i) + "\n")
                 file.close()
+
+        if  smoothed_train_acc > 0.90:
+            break
         print("best smoothed accuracy", best_smooth_acc)
 
     if (i % 10000 == 0 and i != 0):
@@ -140,6 +147,6 @@ file.close()
 
 sess.close()
 
-#Freq = 1000
-#Dur = 500
-#winsound.Beep(Freq, Dur)
+Freq = 1000
+Dur = 500
+winsound.Beep(Freq, Dur)
