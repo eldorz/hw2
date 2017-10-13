@@ -206,14 +206,14 @@ def define_graph(glove_embeddings_arr):
 
     input_data = tf.placeholder(tf.int32,
         shape = (batch_size, WORDS_PER_REVIEW), name = "input_data")
+    input_data = tf.clip_by_value(input_data, 0, GLOVE_MAX_VOCAB - 1, 
+        name = "clip_indices_to_dictionary_size")
     labels = tf.placeholder(tf.int32, shape = (batch_size, 2), name = "labels")
 
     # substitute embeddings for word indices
     # embeddings are trainable
     embeddings = tf.Variable(glove_embeddings_arr, name = "embeddings",
         trainable = True)
-    embeddings = tf.clip_by_value(embeddings, 0, GLOVE_MAX_VOCAB - 1, 
-        name = "clip_indices_to_input_data_size")
     input_embeddings = tf.nn.embedding_lookup(embeddings, input_data, 
         name = "input_embeddings")
 
