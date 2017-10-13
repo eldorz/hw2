@@ -3,7 +3,7 @@ import tensorflow as tf
 import implementation as imp
 from random import randint
 
-checkpoints_dir = "./checkpoints_final_1"
+checkpoints_dir = "./checkpoints_final"
 batch_size = 30
 seq_length = 40
 num_batches = 1000
@@ -31,7 +31,7 @@ saver = tf.train.Saver()
 with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
     # Restore variables from disk.
-    saver.restore(sess, checkpoints_dir + "/trained_model.ckpt-22000")
+    saver.restore(sess, checkpoints_dir + "/trained_model.ckpt-9550")
     print("Model restored.")
 
     sess.run(dropout_keep_prob.assign(1.0))

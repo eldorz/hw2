@@ -116,3 +116,4 @@ hw2sent/log.txt
 data2/*
 hw2sent/~$good_models.xlsx
 hw2sent/model_*/*
+hw2sent/checkpoints_final/*
